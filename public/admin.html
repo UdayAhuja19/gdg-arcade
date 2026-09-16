@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDG Arcade Admin</title>
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="btn btn--sm" href="./">&lt; ARCADE</a>
+      <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+      <img class="logo-mark" src="assets/logo-mark.svg" alt="GDG">
+    </header>
+
+    <div class="admin">
+      <h1 class="t-h1 bracketed">ADMIN</h1>
+
+      <form class="card admin__pin" id="pin-form" novalidate>
+        <h2 class="t-h2">ENTER THE ADMIN PIN</h2>
+        <label class="sr-only" for="pin">Admin PIN</label>
+        <input class="field" id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN">
+        <p class="field-error" id="pin-error" aria-live="polite"></p>
+        <button class="btn btn--primary" type="submit">&lt;UNLOCK&gt;</button>
+      </form>
+
+      <div id="panel" hidden>
+        <div class="admin">
+          <section aria-labelledby="stats-title" class="admin">
+            <h2 class="t-h2" id="stats-title">PLAYS SO FAR</h2>
+            <div class="stats" id="stats"></div>
+          </section>
+
+          <section aria-labelledby="runs-title" class="admin">
+            <h2 class="t-h2" id="runs-title">SCORES</h2>
+            <p class="t-small">HIDE A SCORE TO TAKE IT OFF THE BOARD. HIDE A PLAYER TO REMOVE EVERY SCORE UNDER THAT NAME.</p>
+            <div class="tabs" id="tabs" role="group" aria-label="Game"></div>
+            <div class="table-wrap">
+              <table class="runs">
+                <thead>
+                  <tr><th>NAME</th><th>SCORE</th><th>FINISHED</th><th>STATUS</th><th><span class="sr-only">Actions</span></th></tr>
+                </thead>
+                <tbody id="runs"></tbody>
+              </table>
+            </div>
+            <p class="t-small" id="runs-empty" hidden>NO SCORES FOR THIS GAME YET.</p>
+          </section>
+
+          <section class="card danger" aria-labelledby="reset-title">
+            <h2 class="t-h2" id="reset-title">RESET EVERYTHING</h2>
+            <p>DELETES EVERY PLAYER AND SCORE. USE THIS BEFORE THE FAIR OPENS, NOT DURING IT.</p>
+            <form class="danger__form" id="reset-form" novalidate>
+              <label class="sr-only" for="reset-confirm">Type RESET to confirm</label>
+              <input class="field" id="reset-confirm" type="text" autocomplete="off" placeholder="TYPE RESET">
+              <button class="btn btn--red" type="submit">DELETE ALL SCORES</button>
+            </form>
+            <p class="field-error" id="reset-msg" aria-live="polite"></p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

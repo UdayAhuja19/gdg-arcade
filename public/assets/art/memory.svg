@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150">
+  <defs><pattern id="g" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="#ECECEC" stroke-width="1"/></pattern></defs><rect width="240" height="150" fill="#fff"/><rect width="240" height="150" fill="url(#g)"/>
+  <g stroke="#111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(24 20)">
+      <rect width="42" height="52" rx="9" fill="#EA4335"/>
+      <path d="M17 18 L10 26 L17 34 M25 18 L32 26 L25 34" fill="none" stroke="#fff"/>
+    </g>
+    <g transform="translate(76 20) rotate(-4 21 26)">
+      <rect width="42" height="52" rx="9" fill="#fff"/>
+      <path d="M13 36 L32 26 L16 14 Z" fill="#34A853" stroke="none"/>
+    </g>
+    <g transform="translate(128 20)">
+      <rect width="42" height="52" rx="9" fill="#EA4335"/>
+      <path d="M17 18 L10 26 L17 34 M25 18 L32 26 L25 34" fill="none" stroke="#fff"/>
+    </g>
+    <g transform="translate(180 20)">
+      <rect width="42" height="52" rx="9" fill="#EA4335"/>
+      <path d="M17 18 L10 26 L17 34 M25 18 L32 26 L25 34" fill="none" stroke="#fff"/>
+    </g>
+    <g transform="translate(24 82)">
+      <rect width="42" height="52" rx="9" fill="#EA4335"/>
+      <path d="M17 18 L10 26 L17 34 M25 18 L32 26 L25 34" fill="none" stroke="#fff"/>
+    </g>
+    <g transform="translate(76 82)">
+      <rect width="42" height="52" rx="9" fill="#EA4335"/>
+      <path d="M17 18 L10 26 L17 34 M25 18 L32 26 L25 34" fill="none" stroke="#fff"/>
+    </g>
+    <g transform="translate(128 82) rotate(5 21 26)">
+      <rect width="42" height="52" rx="9" fill="#fff"/>
+      <path d="M13 36 L32 26 L16 14 Z" fill="#34A853" stroke="none"/>
+    </g>
+    <g transform="translate(180 82)">
+      <rect width="42" height="52" rx="9" fill="#EA4335"/>
+      <path d="M17 18 L10 26 L17 34 M25 18 L32 26 L25 34" fill="none" stroke="#fff"/>
+    </g>
+  </g>
+</svg>

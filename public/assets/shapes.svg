@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Brand shapes. Flat fill only (currentColor), never outlined. viewBox 0 0 100 100. -->
+  <symbol id="triangle" viewBox="0 0 100 100">
+    <path d="M18 14 L90 40 L34 90 Z" fill="currentColor" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="flower" viewBox="0 0 100 100">
+    <g fill="currentColor">
+      <circle cx="50" cy="50" r="34"/>
+      <circle cx="84" cy="50" r="13"/><circle cx="77.5" cy="70" r="13"/>
+      <circle cx="60.5" cy="82.3" r="13"/><circle cx="39.5" cy="82.3" r="13"/>
+      <circle cx="22.5" cy="70" r="13"/><circle cx="16" cy="50" r="13"/>
+      <circle cx="22.5" cy="30" r="13"/><circle cx="39.5" cy="17.7" r="13"/>
+      <circle cx="60.5" cy="17.7" r="13"/><circle cx="77.5" cy="30" r="13"/>
+    </g>
+  </symbol>
+  <symbol id="blob" viewBox="0 0 100 100">
+    <g fill="currentColor">
+      <circle cx="29" cy="29" r="25"/><circle cx="50" cy="50" r="25"/><circle cx="71" cy="71" r="25"/>
+    </g>
+  </symbol>
+  <symbol id="capsule" viewBox="0 0 100 100">
+    <rect x="31" y="4" width="38" height="92" rx="19" fill="currentColor"/>
+  </symbol>
+  <symbol id="rounded-rect" viewBox="0 0 100 100">
+    <rect x="6" y="27" width="88" height="46" rx="13" fill="currentColor"/>
+  </symbol>
+  <symbol id="circle" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="48" fill="currentColor"/>
+  </symbol>
+  <symbol id="half-circle" viewBox="0 0 100 100">
+    <path d="M8 66 A42 42 0 0 1 92 66 Z" fill="currentColor" stroke="currentColor" stroke-width="8" stroke-linejoin="round"/>
+  </symbol>
+</svg>

@@ -1,0 +1,92 @@
+/* GDG on Campus UOBD — design tokens.
+   Source of truth for colour, type, shape and motion. See DESIGN.md. */
+/* Archivo (SIL Open Font License, see ../fonts/OFL.txt), bundled so the site works offline and on GitHub Pages */
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("../fonts/archivo-latin-wdth-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("../fonts/archivo-latin-ext-wdth-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* Colour: paper, ink and the four brand colours */
+  --paper: #ffffff;
+  --grid-line: #ececec;
+  --ink: #111111;
+  --muted: #bdbdbd;
+  --red: #ea4335;
+  --blue: #4285f4;
+  --yellow: #fbbc04;
+  --green: #34a853;
+
+  /* Role colours */
+  --rank-1: var(--yellow);
+  --rank-2: var(--blue);
+  --rank-3: var(--red);
+  --game-dino: var(--green);
+  --game-flappy: var(--yellow);
+  --game-snake: var(--blue);
+  --game-memory: var(--red);
+  --game-stack: var(--ink);
+  --focus: var(--blue);
+
+  /* Type */
+  --font: "Archivo Variable", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --display-size: clamp(64px, 12vw, 180px);
+  --display-weight: 900;
+  --display-tracking: -0.04em;
+  --h1-size: clamp(40px, 6vw, 72px);
+  --h2-size: clamp(26px, 3vw, 36px);
+  --h2-weight: 800;
+  --h2-tracking: -0.02em;
+  --pill-size: 18px;
+  --pill-weight: 700;
+  --pill-tracking: 0.01em;
+  --body-size: 15px;
+  --body-weight: 500;
+  --body-tracking: 0.02em;
+  --small-size: 13px;
+
+  /* Grid paper */
+  --grid-size: 32px;
+
+  /* Lines, radii and the hard sticker shadow */
+  --stroke: 3px;
+  --stroke-thin: 2px;
+  --radius-pill: 999px;
+  --radius-card: 28px;
+  --radius-inner: 18px;
+  --shadow-offset: 5px;
+  --shadow-hover: 7px;
+  --shadow: 0 var(--shadow-offset) 0 var(--ink);
+
+  /* Spacing (8px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur: 220ms;
+}

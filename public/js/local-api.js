@@ -1,0 +1,100 @@
+// Scores for the GitHub Pages demo. There's no server or database: each browser keeps
+// its own best score per player per game in localStorage, with the same top-3 rules
+// as the fair laptop (best score per name, earliest wins ties).
+import { ApiError } from "./api-error.js";
+import { GAME_LIST } from "./shared/games.js";
+import { normalizeName } from "./shared/names.js";
+
+const KEY = "gdg-arcade-demo-scores";
+
+function load() {
+  try {
+    const data = JSON.parse(localStorage.getItem(KEY));
+    if (data && typeof data.best === "object" && data.best !== null) return data;
+  } catch {
+    // Unreadable or blocked storage: start fresh.
+  }
+  return { best: {} };
+}
+
+function save(data) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+  } catch {
+    // Storage blocked (private mode): scores last until the page closes.
+  }
+}
+
+// data.best[game][playerId] = { name, score, at }
+function ranked(data, game) {
+  return Object.entries(data.best[game] ?? {})
+    .map(([playerId, entry]) => ({ playerId, ...entry }))
+    .sort((a, b) => b.score - a.score || a.at - b.at);
+}
+
+function top3(rows) {
+  return rows.slice(0, 3).map(({ playerId, name, score }, i) => ({ rank: i + 1, playerId, name, score }));
+}
+
+function standing(rows, playerId) {
+  const i = rows.findIndex((r) => r.playerId === playerId);
+  return i === -1 ? { best: null, rank: null } : { best: rows[i].score, rank: i + 1 };
+}
+
+const runs = new Map();
+let nextRunId = 1;
+
+export const localApi = {
+  async createPlayer(rawName) {
+    const result = normalizeName(rawName);
+    if (result.error) throw new ApiError(422, result.error);
+    return { id: result.key, name: result.name };
+  },
+
+  async boards() {
+    const data = load();
+    return Object.fromEntries(GAME_LIST.map((g) => [g.key, top3(ranked(data, g.key))]));
+  },
+
+  async board(game, playerId) {
+    const rows = ranked(load(), game);
+    const body = { game, top3: top3(rows) };
+    if (playerId) body.me = standing(rows, playerId);
+    return body;
+  },
+
+  async startRun(game, playerId) {
+    const runId = nextRunId++;
+    runs.set(runId, { game, playerId });
+    return { runId, token: "local" };
+  },
+
+  async finishRun(runId, token, score) {
+    const run = runs.get(runId);
+    if (!run) throw new ApiError(409, "THIS SCORE IS ALREADY SAVED.");
+    runs.delete(runId);
+    if (!Number.isSafeInteger(score) || score < 0) throw new ApiError(422, "SCORE MUST BE A WHOLE NUMBER.");
+
+    const data = load();
+    const board = (data.best[run.game] ??= {});
+    const previous = board[run.playerId];
+    const isNewBest = score > 0 && (!previous || score > previous.score);
+    if (!previous || score > previous.score) {
+      // Player ids are the lowercased name, so the display name is its uppercase form.
+      board[run.playerId] = { name: run.playerId.toUpperCase(), score, at: Date.now() };
+      save(data);
+    }
+
+    const rows = ranked(data, run.game);
+    const me = standing(rows, run.playerId);
+    const third = rows[2];
+    return {
+      score,
+      best: me.best,
+      isNewBest,
+      rank: me.rank,
+      pointsToTop3: me.rank > 3 && third ? third.score - me.best + 1 : 0,
+      top3: top3(rows),
+    };
+  },
+};

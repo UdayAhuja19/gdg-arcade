@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150">
+  <defs><pattern id="g" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="#ECECEC" stroke-width="1"/></pattern></defs><rect width="240" height="150" fill="#fff"/><rect width="240" height="150" fill="url(#g)"/>
+  <g stroke="#111" stroke-width="3" stroke-linejoin="round">
+    <rect x="130" y="-20" width="40" height="66" rx="14" fill="#34A853"/>
+    <rect x="130" y="104" width="40" height="70" rx="14" fill="#34A853"/>
+    <rect x="206" y="-20" width="40" height="36" rx="14" fill="#34A853"/>
+    <rect x="206" y="76" width="40" height="90" rx="14" fill="#34A853"/>
+    <g transform="translate(74 70) rotate(-12)">
+      <path d="M17 -2 L32 4 L17 10 Z" fill="#EA4335"/>
+      <circle r="20" fill="#FBBC04"/>
+      <ellipse cx="-8" cy="6" rx="10" ry="6.5" fill="#fff"/>
+      <circle cx="7" cy="-6" r="6.5" fill="#fff"/>
+      <circle cx="9" cy="-6" r="2.5" fill="#111" stroke="none"/>
+    </g>
+  </g>
+</svg>

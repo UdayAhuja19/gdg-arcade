@@ -1,0 +1,20 @@
+{
+  "name": "gdg-clubfair-arcade",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Club fair arcade for GDG on Campus UOBD: five quick games with top-3 leaderboards stored in MySQL.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "test": "node --env-file-if-exists=.env --test \"test/*.test.js\"",
+    "build:static": "node scripts/build-static.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mysql2": "^3.24.4"
+  }
+}

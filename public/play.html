@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDG Arcade Game</title>
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="btn btn--sm" href="./">&lt; LIBRARY</a>
+      <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+      <img class="logo-mark" src="assets/logo-mark.svg" alt="GDG">
+    </header>
+
+    <p class="banner" id="db-banner" hidden></p>
+
+    <div class="play-head">
+      <h1 class="t-h1 bracketed" id="game-title">GAME</h1>
+      <span class="pill pill--lg" id="player-pill"></span>
+    </div>
+
+    <div class="play-layout">
+      <div class="stage-wrap">
+        <section class="card stage" id="stage" aria-label="Game">
+          <div class="game-root" id="game-root"></div>
+          <div class="overlay" id="overlay" hidden></div>
+        </section>
+        <div class="hints" id="hints"></div>
+      </div>
+
+      <aside class="side">
+        <section class="card" aria-labelledby="score-title">
+          <h2 class="caption" id="score-title">SCORE</h2>
+          <p class="t-score live-score" id="live-score" aria-live="off">0</p>
+          <div class="me-line"><span class="t-small">YOUR BEST</span><span class="t-score" id="my-best">—</span></div>
+          <div class="me-line"><span class="t-small">YOUR RANK</span><span class="t-score" id="my-rank">—</span></div>
+        </section>
+        <section class="card" aria-labelledby="board-title">
+          <h2 class="t-h2" id="board-title">TOP 3</h2>
+          <ol class="board" id="board"></ol>
+          <p class="t-small" id="board-note" hidden>SCORES ON THIS DEVICE ONLY</p>
+        </section>
+        <section class="card card--flat" aria-labelledby="rules-title">
+          <h2 class="caption" id="rules-title">HOW SCORING WORKS</h2>
+          <div class="rules" id="rules"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script type="module" src="js/play.js"></script>
+</body>
+</html>

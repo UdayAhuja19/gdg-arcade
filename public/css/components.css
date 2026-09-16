@@ -1,0 +1,427 @@
+/* Brand components: sticker pills, buttons, inputs, cards, leaderboard rows,
+   marquee, shapes and page chrome. */
+
+/* ---------- Page chrome ---------- */
+.page {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-inline: clamp(16px, 4vw, 48px);
+  padding-block: var(--space-5) var(--space-8);
+  /* Lets .card__peek shapes (z-index: -1) tuck behind cards without leaving the page */
+  isolation: isolate;
+}
+
+.topbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 64px;
+}
+
+.topbar > :first-child {
+  justify-self: start;
+}
+
+.topbar > :last-child {
+  justify-self: end;
+}
+
+.logo-mark {
+  width: 72px;
+  height: auto;
+}
+
+/* ---------- Sticker pill (the post's signature element) ---------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.62em 1.15em 0.55em;
+  font-size: var(--pill-size);
+  font-weight: var(--pill-weight);
+  letter-spacing: var(--pill-tracking);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+}
+
+.pill--xl {
+  font-size: clamp(28px, 5vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  padding: 0.28em 0.7em 0.24em;
+  border-width: 4px;
+  box-shadow: 0 7px 0 var(--ink);
+}
+
+.pill--lg {
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 800;
+}
+
+.pill--sm {
+  font-size: 14px;
+  padding: 0.55em 0.95em 0.5em;
+  box-shadow: 0 3px 0 var(--ink);
+  border-width: var(--stroke-thin);
+}
+
+/* Thin pill: marquee row and hints, no shadow */
+.pill--thin {
+  border-width: var(--stroke-thin);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+/* Header pill with the club name */
+.pill--header {
+  font-size: clamp(12px, 1.5vw, 19px);
+  font-weight: 800;
+  padding: 0.6em 1.2em 0.52em;
+}
+
+.pill--filled-yellow { background: var(--yellow); }
+.pill--filled-blue { background: var(--blue); }
+.pill--filled-red { background: var(--red); }
+.pill--filled-green { background: var(--green); }
+.pill--filled-ink { background: var(--ink); color: var(--paper); }
+
+/* Decorative tilt, only for collage layouts */
+.tilt-1 { rotate: -12deg; }
+.tilt-2 { rotate: 9deg; }
+.tilt-3 { rotate: -4deg; }
+.tilt-4 { rotate: 6deg; }
+.tilt-5 { rotate: -8deg; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: 0.7em 1.4em 0.62em;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 var(--shadow-offset) 0 var(--ink);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    translate var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast) var(--ease-spring);
+}
+
+.btn:hover {
+  translate: 0 -2px;
+  box-shadow: 0 var(--shadow-hover) 0 var(--ink);
+}
+
+.btn:active,
+.btn.is-pressed {
+  translate: 0 var(--shadow-offset);
+  box-shadow: 0 0 0 var(--ink);
+  transition-duration: 60ms;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--muted);
+  border-color: var(--muted);
+  box-shadow: 0 var(--shadow-offset) 0 var(--muted);
+  translate: none;
+}
+
+.btn--primary { background: var(--yellow); }
+.btn--blue { background: var(--blue); }
+.btn--red { background: var(--red); }
+.btn--green { background: var(--green); }
+.btn--ink {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn--lg {
+  min-height: 64px;
+  font-size: 24px;
+  padding-inline: 1.3em;
+}
+
+.btn--sm {
+  min-height: 40px;
+  font-size: 15px;
+  padding: 0.6em 1em 0.52em;
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.btn--sm:hover {
+  box-shadow: 0 5px 0 var(--ink);
+}
+
+.btn--sm:active {
+  translate: 0 3px;
+}
+
+/* Text link styled in brand voice */
+.link {
+  padding: 0;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Keyboard key chip used in hints: SPACE, arrows */
+.key {
+  display: inline-block;
+  min-width: 1.9em;
+  padding: 0.18em 0.45em 0.12em;
+  font-weight: 800;
+  text-align: center;
+  background: var(--paper);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+/* ---------- Input ---------- */
+.field {
+  width: 100%;
+  min-height: 64px;
+  padding: 0.5em 1.1em 0.42em;
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 4px 0 rgb(17 17 17 / 0.08);
+  outline: none;
+  transition: box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.field::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.field:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.field[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+.field-error {
+  min-height: 1.45em;
+  padding-inline: 1.3em;
+  font-size: var(--small-size);
+  font-weight: 700;
+  color: var(--red);
+}
+
+/* ---------- Card / game tile ---------- */
+.card {
+  position: relative;
+  padding: var(--space-5);
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.card--flat {
+  box-shadow: none;
+}
+
+/* A brand shape that peeks over a corner of a card */
+.card__peek {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ---------- Leaderboard ---------- */
+.board {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.board__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 4px 18px 4px 4px;
+  background: var(--paper);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-pill);
+}
+
+.board__row.is-me {
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.board__rank {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 50%;
+}
+
+.board__row:nth-child(1) .board__rank { background: var(--rank-1); }
+.board__row:nth-child(2) .board__rank { background: var(--rank-2); }
+.board__row:nth-child(3) .board__rank { background: var(--rank-3); }
+
+.board__name {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board__score {
+  font-size: 19px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.board__row--empty {
+  color: var(--muted);
+  border-style: dashed;
+  border-color: var(--muted);
+}
+
+.board__row--empty .board__rank {
+  color: var(--muted);
+  background: var(--paper) !important;
+  border-color: var(--muted);
+}
+
+/* ---------- Marquee ---------- */
+.marquee {
+  position: relative;
+  overflow: hidden;
+  padding-block: 6px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+.marquee__track {
+  display: flex;
+  gap: var(--space-4);
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.marquee__track .pill {
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 500;
+}
+
+@keyframes marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+
+/* ---------- Shapes ---------- */
+.shape {
+  display: block;
+  pointer-events: none;
+}
+
+.shape--red { color: var(--red); }
+.shape--blue { color: var(--blue); }
+.shape--yellow { color: var(--yellow); }
+.shape--green { color: var(--green); }
+
+.drift {
+  animation: drift 8s ease-in-out infinite alternate;
+}
+
+.drift--slow {
+  animation-duration: 10s;
+}
+
+.drift--reverse {
+  animation-direction: alternate-reverse;
+}
+
+@keyframes drift {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate(6px, -10px) rotate(8deg);
+  }
+}
+
+/* ---------- Sticker badge (NEW BEST!, PERFECT) ---------- */
+.badge {
+  display: inline-block;
+  padding: 0.45em 0.9em 0.38em;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  background: var(--yellow);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 3px 0 var(--ink);
+  rotate: -6deg;
+}
+
+.pop-in {
+  animation: pop-in 320ms var(--ease-spring) both;
+}
+
+@keyframes pop-in {
+  from {
+    scale: 0.4;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/* ---------- Footer copy ---------- */
+.footer-copy {
+  max-width: 78ch;
+  font-size: var(--body-size);
+  font-weight: 500;
+  letter-spacing: var(--body-tracking);
+  line-height: 1.35;
+}

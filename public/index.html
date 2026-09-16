@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDG Arcade</title>
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <span></span>
+      <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+      <img class="logo-mark" src="assets/logo-mark.svg" alt="GDG">
+    </header>
+
+    <p class="banner" id="db-banner" hidden>SCORES AREN'T SAVING RIGHT NOW: THE DATABASE IS OFFLINE. YOU CAN STILL PLAY.</p>
+
+    <section class="home-hero" aria-labelledby="title">
+      <h1 id="title" class="t-display bracketed">ARCADE</h1>
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track" id="marquee"></div>
+      </div>
+      <p class="pill pill--thin pill--sm" id="demo-note" hidden>ONLINE DEMO: SCORES SAVE ON THIS DEVICE ONLY</p>
+    </section>
+
+    <section class="card gate" id="gate" aria-labelledby="gate-title">
+      <svg class="shape card__peek gate__peek-a" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
+      <svg class="shape card__peek gate__peek-b" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg>
+      <h2 id="gate-title" class="t-h2">WHAT'S YOUR NAME?</h2>
+      <form class="gate__form" id="gate-form" novalidate>
+        <label class="sr-only" for="name">Your name</label>
+        <input class="field" id="name" name="name" type="text" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="NAME + SURNAME INITIAL" aria-describedby="name-error">
+        <button class="btn btn--primary btn--lg" type="submit">&lt;START&gt;</button>
+        <p class="field-error" id="name-error" aria-live="polite"></p>
+      </form>
+      <p class="t-small">YOUR SCORES SAVE UNDER THIS NAME. THE TOP 3 IN EACH GAME SHOW UP ON THE BOARD.</p>
+    </section>
+
+    <div class="player-bar" id="player-bar" hidden>
+      <span class="pill pill--lg" id="player-pill">PLAYING AS</span>
+      <button class="link" type="button" id="not-you">NOT YOU?</button>
+    </div>
+
+    <section class="library" id="library" aria-labelledby="library-title">
+      <div class="library__head">
+        <h2 id="library-title" class="t-h1 bracketed">PICK A GAME</h2>
+        <p class="t-small">5 GAMES. TOP 3 ON EACH BOARD.</p>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </section>
+
+    <footer class="home-foot">
+      <svg class="shape shape--blue drift" style="right:22%;top:10px;width:120px;height:120px" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
+      <svg class="shape shape--yellow drift drift--slow" style="right:2%;top:-20px;width:150px;height:150px" aria-hidden="true"><use href="assets/shapes.svg#blob"/></svg>
+      <svg class="shape shape--red" style="right:8%;bottom:0;width:170px;height:170px" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg>
+      <div class="home-foot__pills">
+        <span class="pill pill--xl tilt-3">EVENTS</span>
+        <span class="pill pill--xl tilt-2">HACKATHONS</span>
+        <span class="pill pill--xl tilt-5">WORKSHOPS</span>
+      </div>
+      <p class="footer-copy">LIKE BUILDING THINGS? GDG ON CAMPUS UOBD RUNS EVENTS, HACKATHONS AND WORKSHOPS ALL YEAR. OPEN TO ALL MAJORS. ASK US ABOUT JOINING AT THE BOOTH.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>

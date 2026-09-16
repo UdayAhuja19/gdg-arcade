@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDG UOBD Design Sheet</title>
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <style>
+    /* Page-only layout for the style guide */
+    .hero {
+      display: grid;
+      justify-items: center;
+      gap: var(--space-5);
+      padding-block: var(--space-8) var(--space-4);
+      text-align: center;
+    }
+
+    .hero .t-display {
+      font-size: clamp(64px, 14vw, 200px);
+    }
+
+    .hero .marquee {
+      width: min(100%, 1040px);
+    }
+
+    .collage {
+      position: relative;
+      height: 540px;
+      margin-top: var(--space-6);
+    }
+
+    .collage > * {
+      position: absolute;
+    }
+
+    .collage .pill {
+      text-decoration: none;
+      transition: scale var(--dur) var(--ease-spring);
+    }
+
+    .collage .pill:hover {
+      scale: 1.05;
+    }
+
+    .section {
+      display: grid;
+      gap: var(--space-6);
+      padding-block: var(--space-9) 0;
+      scroll-margin-top: var(--space-5);
+    }
+
+    .section__head {
+      display: grid;
+      gap: var(--space-3);
+      max-width: 68ch;
+    }
+
+    .caption {
+      font-size: var(--small-size);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .spec {
+      font-size: var(--small-size);
+      font-weight: 500;
+      color: #5c5c5c;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Colour */
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .swatch {
+      display: grid;
+      align-content: start;
+      gap: var(--space-3);
+    }
+
+    .swatch__chip {
+      aspect-ratio: 4 / 3;
+      max-width: 100%;
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+    }
+
+    .swatch__chip--sm {
+      aspect-ratio: 8 / 3;
+    }
+
+    .swatch__chip--grid {
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+
+    .swatch__name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .ratio {
+      display: flex;
+      height: 64px;
+      overflow: hidden;
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow);
+    }
+
+    .ratio > span {
+      display: flex;
+      align-items: center;
+      padding-inline: var(--space-4);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .ratio__paper {
+      flex: 70;
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+
+    .ratio__ink {
+      flex: 20;
+      color: var(--paper);
+      background: var(--ink);
+      border-left: var(--stroke) solid var(--ink);
+    }
+
+    .ratio__brand {
+      flex: 10;
+      padding: 0 !important;
+      border-left: var(--stroke) solid var(--ink);
+    }
+
+    .ratio__brand i {
+      flex: 1;
+      height: 100%;
+    }
+
+    .mapping {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .map-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: var(--stroke-thin) solid var(--ink);
+      border-radius: 50%;
+    }
+
+    /* Type */
+    .type-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      align-items: end;
+      gap: var(--space-5);
+      padding-block: var(--space-5);
+      border-bottom: var(--stroke-thin) solid var(--ink);
+    }
+
+    .type-row:first-child {
+      border-top: var(--stroke-thin) solid var(--ink);
+    }
+
+    .type-row .t-display {
+      font-size: clamp(56px, 10vw, 150px);
+    }
+
+    /* Shapes */
+    .shapes {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .shape-cell {
+      display: grid;
+      justify-items: center;
+      gap: var(--space-3);
+      text-align: center;
+    }
+
+    .shape-cell svg {
+      width: 100%;
+      max-width: 120px;
+      aspect-ratio: 1;
+    }
+
+    /* Components */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .demo {
+      display: grid;
+      align-content: start;
+      gap: var(--space-5);
+    }
+
+    .demo--wide {
+      grid-column: 1 / -1;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .tile-demo-row {
+      isolation: isolate;
+    }
+
+    .demo-tile {
+      width: min(100%, 340px);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .demo-tile img {
+      border: var(--stroke-thin) solid var(--ink);
+      border-radius: var(--radius-inner);
+    }
+
+    .demo-tile .card__peek {
+      width: 110px;
+      height: 110px;
+      top: -46px;
+      right: -44px;
+      rotate: 18deg;
+    }
+
+    .tile-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+
+    /* Motion */
+    .motion-stage {
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-7);
+      min-height: 180px;
+    }
+
+    .motion-stage svg {
+      width: 110px;
+    }
+
+    /* Voice */
+    .voice {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .voice ul {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .voice li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--space-3);
+    }
+
+    .strike {
+      color: #6b6b6b;
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-transform: none;
+    }
+
+    /* Game art */
+    .games {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .game-art {
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-3);
+    }
+
+    .game-art img {
+      border: var(--stroke-thin) solid var(--ink);
+      border-radius: 14px;
+    }
+
+    .game-art .pill {
+      justify-self: start;
+    }
+
+    /* Don'ts */
+    .donts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .dont {
+      position: relative;
+      display: grid;
+      place-items: center;
+      gap: var(--space-4);
+      min-height: 190px;
+      padding: var(--space-5);
+      text-align: center;
+    }
+
+    .dont__x {
+      position: absolute;
+      top: -14px;
+      right: -10px;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--paper);
+      background: var(--red);
+      border: var(--stroke) solid var(--ink);
+      border-radius: 50%;
+    }
+
+    .bad-blur {
+      padding: 0.6em 1.1em;
+      font-weight: 700;
+      background: var(--paper);
+      border-radius: var(--radius-pill);
+      box-shadow: 0 10px 24px rgb(0 0 0 / 0.22);
+    }
+
+    .bad-gradient {
+      padding: 0.6em 1.1em;
+      font-weight: 700;
+      color: var(--paper);
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-pill);
+    }
+
+    .bad-lower {
+      font-size: 34px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .bad-thin {
+      padding: 0.6em 1.1em;
+      font-weight: 700;
+      border: 1px solid #999;
+      border-radius: var(--radius-pill);
+      rotate: -8deg;
+    }
+
+    .foot {
+      position: relative;
+      display: grid;
+      gap: var(--space-6);
+      margin-top: var(--space-9);
+      padding-top: var(--space-7);
+    }
+
+    @media (max-width: 1000px) {
+      .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .shapes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .donts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .demo-grid, .mapping, .voice { grid-template-columns: 1fr; }
+      .type-row { grid-template-columns: 1fr; }
+
+      .collage {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-content: center;
+        gap: var(--space-5);
+        height: auto;
+        padding-block: var(--space-6);
+      }
+
+      .collage > * { position: static; }
+      .collage > svg { width: 72px !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="pill pill--sm" href="./">&lt; ARCADE</a>
+      <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+      <img class="logo-mark" src="assets/logo-mark.svg" alt="GDG bracket mark">
+    </header>
+
+    <section class="hero" aria-labelledby="title">
+      <h1 id="title" class="t-display bracketed">BRAND</h1>
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track">
+          <span class="pill pill--thin">DESIGN SHEET</span>
+          <span class="pill pill--thin">CLUB FAIR ARCADE</span>
+          <span class="pill pill--thin">GDG ON CAMPUS UOBD</span>
+          <span class="pill pill--thin">VERSION 1</span>
+          <span class="pill pill--thin">DESIGN SHEET</span>
+          <span class="pill pill--thin">CLUB FAIR ARCADE</span>
+          <span class="pill pill--thin">GDG ON CAMPUS UOBD</span>
+          <span class="pill pill--thin">VERSION 1</span>
+        </div>
+      </div>
+      <p class="footer-copy">THE RULES BEHIND OUR POSTS, NOW WRITTEN DOWN. USE THEM FOR THE ARCADE, EVENT SCREENS, SLIDES AND ANYTHING ELSE WE MAKE. PICK A PILL TO JUMP TO A SECTION.</p>
+    </section>
+
+    <nav class="collage" aria-label="Sections">
+      <svg class="shape shape--green drift" style="left:1%;top:0;width:150px" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
+      <svg class="shape shape--blue drift drift--slow" style="left:42%;top:-4%;width:130px" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
+      <svg class="shape shape--yellow drift drift--reverse" style="right:2%;top:-4%;width:170px" aria-hidden="true"><use href="assets/shapes.svg#blob"/></svg>
+      <svg class="shape shape--red drift drift--slow" style="left:-3%;top:40%;width:180px;height:180px" aria-hidden="true"><use href="assets/shapes.svg#capsule"/></svg>
+      <svg class="shape shape--blue drift drift--reverse" style="left:39%;top:62%;width:150px;height:150px;rotate:14deg" aria-hidden="true"><use href="assets/shapes.svg#rounded-rect"/></svg>
+      <svg class="shape shape--red" style="right:1%;top:56%;width:220px;height:220px" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg>
+      <svg class="shape shape--yellow drift" style="left:3%;bottom:-8%;width:160px;height:160px;rotate:-24deg" aria-hidden="true"><use href="assets/shapes.svg#half-circle"/></svg>
+
+      <a class="pill pill--xl tilt-3" style="left:10%;top:20%" href="#colour">COLOUR</a>
+      <a class="pill pill--xl tilt-2" style="left:60%;top:12%" href="#type">TYPE</a>
+      <a class="pill pill--xl tilt-5" style="left:7%;top:47%" href="#components">COMPONENTS</a>
+      <a class="pill pill--xl tilt-1" style="left:58%;top:40%" href="#shapes">SHAPES</a>
+      <a class="pill pill--xl tilt-4" style="left:20%;top:76%" href="#voice">VOICE</a>
+      <a class="pill pill--xl tilt-3" style="left:53%;top:74%" href="#games">GAMES</a>
+    </nav>
+
+    <!-- COLOUR -->
+    <section id="colour" class="section" aria-labelledby="colour-title">
+      <div class="section__head">
+        <h2 id="colour-title" class="t-h1 bracketed">COLOUR</h2>
+        <p>WHITE PAPER, BLACK INK AND THE FOUR GOOGLE COLOURS. BRAND COLOURS ARE ALWAYS FLAT: NO GRADIENTS, NO TINTS, NO TRANSPARENCY.</p>
+      </div>
+
+      <div class="swatches">
+        <div class="swatch">
+          <div class="swatch__chip" style="background:var(--red)"></div>
+          <span class="swatch__name">RED</span>
+          <span class="spec">#EA4335 · MEMORY MATCH, RANK 3, ERRORS</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:var(--blue)"></div>
+          <span class="swatch__name">BLUE</span>
+          <span class="spec">#4285F4 · SNAKE, RANK 2, FOCUS RINGS</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:var(--yellow)"></div>
+          <span class="swatch__name">YELLOW</span>
+          <span class="spec">#FBBC04 · FLAPPY BYTE, RANK 1, MAIN BUTTONS</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip" style="background:var(--green)"></div>
+          <span class="swatch__name">GREEN</span>
+          <span class="spec">#34A853 · DINO RUN</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip swatch__chip--sm" style="background:var(--ink)"></div>
+          <span class="swatch__name">INK</span>
+          <span class="spec">#111111 · TEXT, OUTLINES, HARD SHADOWS, STACK TOWER</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip swatch__chip--sm" style="background:var(--paper)"></div>
+          <span class="swatch__name">PAPER</span>
+          <span class="spec">#FFFFFF · EVERY BACKGROUND AND PILL FILL</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip swatch__chip--sm swatch__chip--grid"></div>
+          <span class="swatch__name">GRID LINE</span>
+          <span class="spec">#ECECEC · 1PX GRAPH PAPER, 32PX SQUARES</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch__chip swatch__chip--sm" style="background:var(--muted)"></div>
+          <span class="swatch__name">MUTED</span>
+          <span class="spec">#BDBDBD · PLACEHOLDERS, EMPTY SLOTS, FADES</span>
+        </div>
+      </div>
+
+      <div class="demo">
+        <span class="caption">HOW MUCH OF EACH</span>
+        <div class="ratio" role="img" aria-label="70 percent paper, 20 percent ink, 10 percent brand colour">
+          <span class="ratio__paper">70% PAPER</span>
+          <span class="ratio__ink">20% INK</span>
+          <span class="ratio__brand"><i style="background:var(--red)"></i><i style="background:var(--blue)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i></span>
+        </div>
+      </div>
+
+      <div class="mapping">
+        <div class="card card--flat demo">
+          <span class="caption">ONE COLOUR PER GAME</span>
+          <div class="map-list">
+            <span class="pill pill--sm"><i class="dot" style="background:var(--green)"></i>DINO RUN</span>
+            <span class="pill pill--sm"><i class="dot" style="background:var(--yellow)"></i>FLAPPY BYTE</span>
+            <span class="pill pill--sm"><i class="dot" style="background:var(--blue)"></i>SNAKE</span>
+            <span class="pill pill--sm"><i class="dot" style="background:var(--red)"></i>MEMORY MATCH</span>
+            <span class="pill pill--sm"><i class="dot" style="background:var(--ink)"></i>STACK TOWER</span>
+          </div>
+        </div>
+        <div class="card card--flat demo">
+          <span class="caption">RANK COLOURS ON EVERY LEADERBOARD</span>
+          <div class="map-list">
+            <span class="pill pill--sm"><i class="dot" style="background:var(--rank-1)"></i>1ST YELLOW</span>
+            <span class="pill pill--sm"><i class="dot" style="background:var(--rank-2)"></i>2ND BLUE</span>
+            <span class="pill pill--sm"><i class="dot" style="background:var(--rank-3)"></i>3RD RED</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TYPE -->
+    <section id="type" class="section" aria-labelledby="type-title">
+      <div class="section__head">
+        <h2 id="type-title" class="t-h1 bracketed">TYPE</h2>
+        <p>ONE TYPEFACE: ARCHIVO. EVERYTHING IS IN CAPITALS. BIG HEADINGS ARE HEAVY, TIGHT AND WRAPPED IN CODE BRACKETS. FALLBACK: HELVETICA NEUE, ARIAL.</p>
+      </div>
+
+      <div>
+        <div class="type-row">
+          <span class="t-display bracketed">HIRING</span>
+          <span class="spec">DISPLAY<br>WEIGHT 900 · TRACKING −4%<br>LINE HEIGHT 0.9 · 64–180PX<br>ALWAYS IN &lt; &gt;</span>
+        </div>
+        <div class="type-row">
+          <span class="t-h1">GAME OVER</span>
+          <span class="spec">HEADING 1<br>WEIGHT 900 · TRACKING −4%<br>40–72PX</span>
+        </div>
+        <div class="type-row">
+          <span class="t-h2">TOP 3 THIS FAIR</span>
+          <span class="spec">HEADING 2<br>WEIGHT 800 · TRACKING −2%<br>26–36PX</span>
+        </div>
+        <div class="type-row">
+          <span><span class="pill">FINANCE</span></span>
+          <span class="spec">PILL LABEL<br>WEIGHT 700 · TRACKING +1%<br>14–28PX</span>
+        </div>
+        <div class="type-row">
+          <span class="t-body footer-copy">WE'RE HIRING! ARE YOU INTERESTED IN HOSTING EVENTS, STEM, TECH, HACKATHONS, CREATIVE FREEDOM, GRAPHIC DESIGNING, MARKETING? JOIN US! OPEN TO ALL MAJORS.</span>
+          <span class="spec">BODY<br>WEIGHT 500 · TRACKING +2%<br>14–16PX · MAX 78 CHARACTERS A LINE</span>
+        </div>
+        <div class="type-row">
+          <span class="t-score" style="font-size:clamp(56px,8vw,96px)">1,280</span>
+          <span class="spec">SCORES<br>WEIGHT 900 · TABULAR NUMBERS<br>SO DIGITS DON'T JUMP</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHAPES -->
+    <section id="shapes" class="section" aria-labelledby="shapes-title">
+      <div class="section__head">
+        <h2 id="shapes-title" class="t-h1 bracketed">SHAPES</h2>
+        <p>SEVEN FLAT SHAPES IN THE BRAND COLOURS. NO OUTLINES. SCATTER 2 TO 6 NEAR THE EDGES, LET THEM OVERLAP PILL CORNERS, AND NEVER PUT TWO OF THE SAME COLOUR SIDE BY SIDE.</p>
+      </div>
+      <div class="shapes">
+        <div class="shape-cell"><svg class="shape shape--green" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg><span class="caption">TRIANGLE</span></div>
+        <div class="shape-cell"><svg class="shape shape--blue" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg><span class="caption">FLOWER</span></div>
+        <div class="shape-cell"><svg class="shape shape--yellow" aria-hidden="true"><use href="assets/shapes.svg#blob"/></svg><span class="caption">BLOB</span></div>
+        <div class="shape-cell"><svg class="shape shape--red" aria-hidden="true"><use href="assets/shapes.svg#capsule"/></svg><span class="caption">CAPSULE</span></div>
+        <div class="shape-cell"><svg class="shape shape--blue" aria-hidden="true"><use href="assets/shapes.svg#rounded-rect"/></svg><span class="caption">BAR</span></div>
+        <div class="shape-cell"><svg class="shape shape--red" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg><span class="caption">CIRCLE</span></div>
+        <div class="shape-cell"><svg class="shape shape--yellow" aria-hidden="true"><use href="assets/shapes.svg#half-circle"/></svg><span class="caption">HALF CIRCLE</span></div>
+      </div>
+    </section>
+
+    <!-- COMPONENTS -->
+    <section id="components" class="section" aria-labelledby="components-title">
+      <div class="section__head">
+        <h2 id="components-title" class="t-h1 bracketed">COMPONENTS</h2>
+        <p>THE STICKER PILL IS OUR SIGNATURE: WHITE FILL, 3PX BLACK OUTLINE AND A HARD 5PX SHADOW STRAIGHT DOWN WITH NO BLUR. TILT PILLS IN DECORATION. KEEP THEM STRAIGHT WHEN PEOPLE NEED TO READ OR CLICK THEM.</p>
+      </div>
+
+      <div class="demo-grid">
+        <div class="card card--flat demo">
+          <span class="caption">PILLS</span>
+          <div class="row">
+            <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+          </div>
+          <div class="row">
+            <span class="pill pill--lg">EVENTS</span>
+            <span class="pill pill--lg tilt-1">LOGISTICS</span>
+            <span class="pill pill--lg tilt-4">OUTREACH</span>
+          </div>
+          <div class="row">
+            <span class="pill pill--thin">LEADS</span>
+            <span class="pill pill--thin">MEMBERS</span>
+            <span class="pill pill--sm">PLAYING AS SARA K</span>
+          </div>
+        </div>
+
+        <div class="card card--flat demo">
+          <span class="caption">BUTTONS · HOVER LIFTS, PRESS PUSHES DOWN</span>
+          <div class="row">
+            <button class="btn btn--primary btn--lg" type="button">&lt;START&gt;</button>
+            <button class="btn" type="button">&lt;LIBRARY&gt;</button>
+          </div>
+          <div class="row">
+            <button class="btn btn--blue" type="button">&lt;PLAY&gt;</button>
+            <button class="btn btn--ink" type="button">NEXT PLAYER</button>
+            <button class="btn" type="button" disabled>LOCKED</button>
+          </div>
+          <div class="row">
+            <button class="btn btn--sm" type="button">&lt; LIBRARY</button>
+            <span class="t-small"><span class="key">SPACE</span> = JUMP</span>
+            <span class="t-small"><span class="key">↓</span> = DUCK</span>
+          </div>
+        </div>
+
+        <div class="card card--flat demo">
+          <span class="caption">NAME FIELD</span>
+          <input class="field" type="text" placeholder="NAME + SURNAME INITIAL" aria-label="Example empty name field">
+          <input class="field" type="text" value="SARA K" aria-label="Example filled name field">
+          <div>
+            <input class="field" type="text" value="X" aria-invalid="true" aria-label="Example name field with error">
+            <p class="field-error">USE 2 TO 16 LETTERS OR NUMBERS.</p>
+          </div>
+        </div>
+
+        <div class="card card--flat demo">
+          <span class="caption">LEADERBOARD · TOP 3 ONLY</span>
+          <ol class="board">
+            <li class="board__row"><span class="board__rank">1</span><span class="board__name">AHMED R</span><span class="board__score">1,480</span></li>
+            <li class="board__row is-me"><span class="board__rank">2</span><span class="board__name">SARA K</span><span class="board__score">1,215</span></li>
+            <li class="board__row"><span class="board__rank">3</span><span class="board__name">PRIYA M</span><span class="board__score">990</span></li>
+          </ol>
+          <ol class="board">
+            <li class="board__row board__row--empty"><span class="board__rank">3</span><span class="board__name">THIS SPOT IS OPEN</span><span class="board__score">—</span></li>
+          </ol>
+          <div class="row">
+            <span class="badge">NEW BEST!</span>
+            <span class="badge" style="background:var(--green);rotate:5deg">PERFECT</span>
+          </div>
+        </div>
+
+        <div class="demo demo--wide">
+          <span class="caption">GAME TILE · CARD WITH A SHAPE PEEKING OVER THE CORNER</span>
+          <div class="row tile-demo-row" style="gap:var(--space-8);align-items:start;padding-top:var(--space-5)">
+            <article class="card demo-tile">
+              <svg class="shape shape--green card__peek" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
+              <h3 class="t-h2">DINO RUN</h3>
+              <img src="assets/art/dino.svg" alt="Green dino jumping towards red capsule cacti">
+              <ol class="board">
+                <li class="board__row"><span class="board__rank">1</span><span class="board__name">AHMED R</span><span class="board__score">1,480</span></li>
+                <li class="board__row"><span class="board__rank">2</span><span class="board__name">SARA K</span><span class="board__score">1,215</span></li>
+                <li class="board__row board__row--empty"><span class="board__rank">3</span><span class="board__name">OPEN SPOT</span><span class="board__score">—</span></li>
+              </ol>
+              <button class="btn btn--green" type="button">&lt;PLAY&gt;</button>
+            </article>
+            <div class="footer-copy" style="max-width:44ch;display:grid;gap:var(--space-3)">
+              <p>CARDS: 28PX CORNERS, 3PX OUTLINE, HARD SHADOW.</p>
+              <p>ONE BRAND SHAPE TUCKED BEHIND A CORNER, IN THE GAME'S COLOUR.</p>
+              <p>INSIDE A CARD, EVERYTHING STAYS STRAIGHT. THE FUN LIVES AROUND THE EDGES.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOTION -->
+    <section id="motion" class="section" aria-labelledby="motion-title">
+      <div class="section__head">
+        <h2 id="motion-title" class="t-h1 bracketed">MOTION</h2>
+        <p>SNAPPY AND SPRINGY. BUTTONS PUSH DOWN INTO THEIR SHADOW IN 60MS AND BOUNCE BACK IN 150MS. SHAPES DRIFT SLOWLY IN 8 TO 10 SECOND LOOPS. IF SOMEONE HAS REDUCED MOTION TURNED ON, EVERYTHING STAYS STILL.</p>
+      </div>
+      <div class="card card--flat motion-stage">
+        <button class="btn btn--primary btn--lg" type="button">PRESS ME</button>
+        <span class="badge pop-in" id="pop-demo">+10</span>
+        <button class="btn btn--sm" type="button" id="replay-pop">REPLAY POP</button>
+        <svg class="shape shape--blue drift" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
+        <svg class="shape shape--yellow drift drift--slow drift--reverse" aria-hidden="true"><use href="assets/shapes.svg#blob"/></svg>
+        <span class="spec">SPRING: CUBIC-BEZIER(.34, 1.56, .64, 1)<br>FAST 150MS · DEFAULT 220MS</span>
+      </div>
+    </section>
+
+    <!-- VOICE -->
+    <section id="voice" class="section" aria-labelledby="voice-title">
+      <div class="section__head">
+        <h2 id="voice-title" class="t-h1 bracketed">VOICE</h2>
+        <p>SHORT, LOUD AND FRIENDLY. HEADINGS AND ACTIONS GO IN CODE BRACKETS. BUTTONS SAY EXACTLY WHAT HAPPENS NEXT.</p>
+      </div>
+      <div class="voice">
+        <div class="card card--flat">
+          <ul>
+            <li><span class="pill pill--sm pill--filled-green">SAY</span><span>&lt;PLAY AGAIN&gt;</span></li>
+            <li><span class="pill pill--sm pill--filled-green">SAY</span><span>YOU'RE #2! 140 POINTS TO BEAT AHMED R</span></li>
+            <li><span class="pill pill--sm pill--filled-green">SAY</span><span><span class="key">SPACE</span> = JUMP</span></li>
+            <li><span class="pill pill--sm pill--filled-green">SAY</span><span>USE 2 TO 16 LETTERS OR NUMBERS.</span></li>
+          </ul>
+        </div>
+        <div class="card card--flat">
+          <ul>
+            <li><span class="pill pill--sm pill--filled-red">SKIP</span><span class="strike">Submit</span></li>
+            <li><span class="pill pill--sm pill--filled-red">SKIP</span><span class="strike">Oops! Something went wrong :(</span></li>
+            <li><span class="pill pill--sm pill--filled-red">SKIP</span><span class="strike">Press the spacebar key in order to make your character jump</span></li>
+            <li><span class="pill pill--sm pill--filled-red">SKIP</span><span class="strike">Invalid input</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAMES -->
+    <section id="games" class="section" aria-labelledby="games-title">
+      <div class="section__head">
+        <h2 id="games-title" class="t-h1 bracketed">GAMES</h2>
+        <p>GAMES LOOK LIKE THE POSTS: GRAPH PAPER, FLAT BRAND COLOURS AND ROUNDED SHAPES WITH A 3PX BLACK OUTLINE. NO PIXEL ART, NO GRADIENTS. BRAND SHAPES DOUBLE AS GAME PIECES.</p>
+      </div>
+      <div class="games">
+        <figure class="card card--flat game-art">
+          <img src="assets/art/dino.svg" alt="Dino Run art">
+          <span class="pill pill--sm"><i class="dot" style="background:var(--green)"></i>DINO RUN</span>
+          <figcaption class="spec">CAPSULES ARE CACTI. FLOWERS FLY.</figcaption>
+        </figure>
+        <figure class="card card--flat game-art">
+          <img src="assets/art/flappy.svg" alt="Flappy Byte art">
+          <span class="pill pill--sm"><i class="dot" style="background:var(--yellow)"></i>FLAPPY BYTE</span>
+          <figcaption class="spec">A YELLOW DOT BIRD. PIPES ARE ROUNDED BARS.</figcaption>
+        </figure>
+        <figure class="card card--flat game-art">
+          <img src="assets/art/snake.svg" alt="Snake art">
+          <span class="pill pill--sm"><i class="dot" style="background:var(--blue)"></i>SNAKE</span>
+          <figcaption class="spec">RED CIRCLE FOOD. YELLOW BLOB BONUS.</figcaption>
+        </figure>
+        <figure class="card card--flat game-art">
+          <img src="assets/art/memory.svg" alt="Memory Match art">
+          <span class="pill pill--sm"><i class="dot" style="background:var(--red)"></i>MEMORY MATCH</span>
+          <figcaption class="spec">RED BRACKET BACKS. SHAPES ON THE FRONT.</figcaption>
+        </figure>
+        <figure class="card card--flat game-art">
+          <img src="assets/art/stack.svg" alt="Stack Tower art">
+          <span class="pill pill--sm"><i class="dot" style="background:var(--ink)"></i>STACK TOWER</span>
+          <figcaption class="spec">PILL BLOCKS CYCLE THROUGH ALL FOUR COLOURS.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- DON'TS -->
+    <section id="donts" class="section" aria-labelledby="donts-title">
+      <div class="section__head">
+        <h2 id="donts-title" class="t-h1 bracketed">DON'T</h2>
+        <p>THESE BREAK THE LOOK. IF SOMETHING FEELS OFF, CHECK HERE FIRST.</p>
+      </div>
+      <div class="donts">
+        <div class="card card--flat dont">
+          <span class="dont__x" aria-hidden="true">✕</span>
+          <span class="bad-blur">EVENTS</span>
+          <span class="caption">NO BLURRY SHADOWS</span>
+        </div>
+        <div class="card card--flat dont">
+          <span class="dont__x" aria-hidden="true">✕</span>
+          <span class="bad-gradient">EVENTS</span>
+          <span class="caption">NO GRADIENTS</span>
+        </div>
+        <div class="card card--flat dont">
+          <span class="dont__x" aria-hidden="true">✕</span>
+          <span class="bad-lower">Hiring</span>
+          <span class="caption">NO LOWERCASE OR LIGHT HEADINGS</span>
+        </div>
+        <div class="card card--flat dont">
+          <span class="dont__x" aria-hidden="true">✕</span>
+          <span class="bad-thin">EVENTS</span>
+          <span class="caption">NO THIN OR GREY STICKER OUTLINES</span>
+        </div>
+      </div>
+      <p class="footer-copy">ALSO: NO MORE THAN 2 BRAND COLOURS INSIDE ONE COMPONENT, NO TILTED INPUTS OR SCORES, AND NO OUTLINES ON DECORATIVE SHAPES.</p>
+    </section>
+
+    <footer class="foot">
+      <svg class="shape shape--red" style="position:absolute;right:4%;top:-10px;width:120px" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg>
+      <svg class="shape shape--green" style="position:absolute;right:16%;top:40px;width:70px;rotate:30deg" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
+      <span class="pill pill--lg tilt-3" style="justify-self:start">GDG ON CAMPUS UOBD</span>
+      <p class="footer-copy">THIS SHEET IS BUILT FROM THE SAME CSS AS THE ARCADE, SO WHAT YOU SEE HERE IS WHAT SHIPS. OPEN TO ALL MAJORS. COME SAY HI AT THE BOOTH.</p>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById("replay-pop").addEventListener("click", () => {
+      const pop = document.getElementById("pop-demo");
+      pop.classList.remove("pop-in");
+      void pop.offsetWidth;
+      pop.classList.add("pop-in");
+    });
+  </script>
+</body>
+</html>

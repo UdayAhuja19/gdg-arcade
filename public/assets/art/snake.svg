@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150">
+  <defs><pattern id="g" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="#ECECEC" stroke-width="1"/></pattern></defs><rect width="240" height="150" fill="#fff"/><rect width="240" height="150" fill="url(#g)"/>
+  <g stroke="#111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M30 105 H105 V45 H165 V90" fill="none" stroke-width="21"/>
+    <path d="M30 105 H105 V45 H165 V90" fill="none" stroke="#4285F4" stroke-width="15"/>
+    <circle cx="165" cy="92" r="11" fill="#4285F4"/>
+    <circle cx="161" cy="95" r="2.4" fill="#111" stroke="none"/>
+    <circle cx="169" cy="95" r="2.4" fill="#111" stroke="none"/>
+    <circle cx="165" cy="128" r="9" fill="#EA4335"/>
+    <g transform="translate(212 30) rotate(20)">
+      <circle cx="-8" cy="-8" r="9" fill="#111" stroke="none"/><circle r="9" fill="#111" stroke="none"/><circle cx="8" cy="8" r="9" fill="#111" stroke="none"/>
+      <circle cx="-8" cy="-8" r="6" fill="#FBBC04" stroke="none"/><circle r="6" fill="#FBBC04" stroke="none"/><circle cx="8" cy="8" r="6" fill="#FBBC04" stroke="none"/>
+    </g>
+  </g>
+</svg>
