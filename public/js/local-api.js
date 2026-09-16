@@ -5,11 +5,30 @@ import { ApiError } from "./api-error.js";
 import { GAME_LIST } from "./shared/games.js";
 import { normalizeName } from "./shared/names.js";
 
-const KEY = "gdg-arcade-demo-scores";
+// Bump SCORES_VERSION to clear every device's demo leaderboard: on their next visit
+// the old saved scores are deleted and the boards start empty.
+const SCORES_VERSION = 2;
+const KEY_PREFIX = "gdg-arcade-demo-scores";
+export const STORAGE_KEY = `${KEY_PREFIX}-v${SCORES_VERSION}`;
+
+let oldSavesCleared = false;
+
+function clearOldSaves() {
+  oldSavesCleared = true;
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(KEY_PREFIX) && key !== STORAGE_KEY) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage blocked: nothing to clear.
+  }
+}
 
 function load() {
+  if (!oldSavesCleared) clearOldSaves();
   try {
-    const data = JSON.parse(localStorage.getItem(KEY));
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (data && typeof data.best === "object" && data.best !== null) return data;
   } catch {
     // Unreadable or blocked storage: start fresh.
@@ -19,7 +38,7 @@ function load() {
 
 function save(data) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
     // Storage blocked (private mode): scores last until the page closes.
   }

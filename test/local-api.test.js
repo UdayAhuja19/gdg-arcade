@@ -8,9 +8,24 @@ globalThis.localStorage = {
   getItem: (k) => (store.has(k) ? store.get(k) : null),
   setItem: (k, v) => store.set(k, String(v)),
   removeItem: (k) => store.delete(k),
+  key: (i) => [...store.keys()][i] ?? null,
+  get length() {
+    return store.size;
+  },
 };
 
-const { localApi } = await import("../public/js/local-api.js");
+// Scores saved by an older version of the demo, before a reset.
+store.set("gdg-arcade-demo-scores", JSON.stringify({ best: { dino: { old: { name: "OLD", score: 999, at: 1 } } } }));
+store.set("unrelated-site-data", "keep me");
+
+const { localApi, STORAGE_KEY } = await import("../public/js/local-api.js");
+
+test("a reset clears scores saved by older versions and leaves other data alone", async () => {
+  const boards = await localApi.boards();
+  assert.deepEqual(boards.dino, []);
+  assert.equal(store.has("gdg-arcade-demo-scores"), false);
+  assert.equal(store.get("unrelated-site-data"), "keep me");
+});
 
 async function play(name, game, score) {
   const player = await localApi.createPlayer(name);
@@ -18,7 +33,9 @@ async function play(name, game, score) {
   return localApi.finishRun(run.runId, run.token, score);
 }
 
-beforeEach(() => store.clear());
+beforeEach((t) => {
+  if (!t.name.startsWith("a reset")) store.clear();
+});
 
 test("names follow the same rules as the server", async () => {
   assert.deepEqual(await localApi.createPlayer("  sara   k "), { id: "sara k", name: "SARA K" });
@@ -57,7 +74,7 @@ test("a run can only be finished once and scores persist across reloads", async 
   await localApi.finishRun(run.runId, run.token, 90);
   await assert.rejects(localApi.finishRun(run.runId, run.token, 900), { status: 409 });
 
-  const stored = JSON.parse(store.get("gdg-arcade-demo-scores"));
+  const stored = JSON.parse(store.get(STORAGE_KEY));
   assert.equal(stored.best.snake.echo.score, 90);
   const board = await localApi.board("snake", "echo");
   assert.deepEqual(board.me, { best: 90, rank: 1 });
