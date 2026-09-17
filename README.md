@@ -97,6 +97,37 @@ After that, every push to `main` runs the tests and republishes the demo automat
 
 **Walk-away reset:** after 45 seconds with no input on the home page or a game-over screen, the arcade clears the name and goes back to the name box, so the next student doesn't play under someone else's name. The **NEXT PLAYER** button does the same thing straight away.
 
+## Party mode: TAP BATTLE and SNAKE BATTLE (4-player games, in progress)
+
+Up to 4 students join on their phones by scanning a QR code on the big screen, and battle each other. **NEXT GAME** (bottom right of the big screen) picks the game:
+
+- **TAP BATTLE:** every tap fills your bar, and it drains when you stop. First to fill it wins.
+- **SNAKE BATTLE:** phones become trackpads (slide a finger to steer), and everyone watches one board on the big screen. Eat to grow. Crash into a wall, yourself or another snake and you're out, and your body turns into food. The last snake left wins.
+
+A round can start with fewer than 4 phones, from the big screen's **START** or from the first phone that joined. While people play, the screen also checks the connection: each phone gets a card with a moving dot, its ping and a verdict. In TAP BATTLE each phone keeps its own bar and resends it until the laptop confirms it, so a reload or a dropped connection doesn't lose anyone's result. In SNAKE BATTLE the laptop runs the board, so the big screen never lags.
+
+Install the free Cloudflare tunnel once (no account needed):
+
+```bash
+brew install cloudflared
+```
+
+Then start the test:
+
+```bash
+npm run party
+```
+
+Open **http://localhost:3101** on the big screen and scan the QR code with up to 4 phones. They can be on campus Wi-Fi or mobile data. The top verdict reads **READY FOR PARTY GAMES** once every phone is good: 95% of pings under 250ms, no more than 2 stutters a minute, and no missed pings.
+
+| Command | Phones join through |
+|---|---|
+| `npm run party` | The internet (free Cloudflare link, changes every start) |
+| `npm run party -- --lan` | The same Wi-Fi as the laptop (no tunnel) |
+| `npm run party -- --local` | Nothing: open http://localhost:3100 in other tabs to try it alone |
+
+Only the phone page is reachable from outside. The arcade, admin page and MySQL stay private. See [HANDOFF.md](HANDOFF.md) for the plan and what to test on campus. The games' numbers are at the top of `public/js/shared/tap-battle.js` (fill per tap, drain, time limit) and `public/js/shared/snake-battle.js` (speed, board size, food), and the fewest phones needed to start is `MIN_PLAYERS` in `server/party/round.js`.
+
 ## How scoring works
 
 Every game starts gentle and speeds up slowly **up to a cap**, so anyone can score but the top spots take skill. Hitboxes are a bit smaller than the drawings, so near-misses feel fair.
@@ -130,8 +161,10 @@ public/
   js/shared/   Game list and name rules, used by both the server and the browser
   js/engine/   60Hz game loop, input, brand drawing helpers, game flow (shell.js)
   js/games/    dino, flappy, snake, memory, stack
+server/party/  Party connection test server (room logic, phone + big-screen sockets, tunnel)
+party/         Party test pages: phone.html, screen.html, their JS and CSS
 scripts/       build-static.js builds the GitHub Pages demo into dist/
-test/          node:test unit, API and demo-scores tests
+test/          node:test unit, API, demo-scores and party tests
 ```
 
 To tune difficulty, change the constants at the top of each file in `public/js/games/`. If you change how many points a game can earn, update `maxScore`/`maxPerSec` in `server/games.js` to match.

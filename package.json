@@ -10,11 +10,14 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env server/index.js",
     "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "party": "node --env-file-if-exists=.env server/party/index.js",
     "test": "node --env-file-if-exists=.env --test \"test/*.test.js\"",
     "build:static": "node scripts/build-static.js"
   },
   "dependencies": {
     "express": "^5.2.1",
-    "mysql2": "^3.24.4"
+    "mysql2": "^3.24.4",
+    "qrcode": "^1.5.4",
+    "ws": "^8.21.3"
   }
 }

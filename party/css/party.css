@@ -1,0 +1,1503 @@
+/* Party connection test: the phone page and the big screen.
+   Built from the brand components in public/css; see DESIGN.md. */
+
+/* Player colours: one brand colour per slot, set with data-color. */
+[data-color="red"] { --player: var(--red); }
+[data-color="blue"] { --player: var(--blue); }
+[data-color="yellow"] { --player: var(--yellow); }
+[data-color="green"] { --player: var(--green); }
+
+@keyframes tap-pop {
+  from { scale: 1.35; }
+  to { scale: 1; }
+}
+
+@keyframes blink {
+  50% { background: var(--paper); }
+}
+
+/* ================= Phone ================= */
+body.phone {
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* No double-tap zoom, no pull-to-refresh, no grey tap flash */
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body.phone input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.phone-page {
+  display: grid;
+  align-content: start;
+  gap: var(--space-5);
+  width: min(100%, 480px);
+  margin: 0 auto;
+  padding:
+    max(var(--space-4), env(safe-area-inset-top))
+    max(var(--space-4), env(safe-area-inset-right))
+    max(var(--space-6), env(safe-area-inset-bottom))
+    max(var(--space-4), env(safe-area-inset-left));
+  isolation: isolate;
+}
+
+.phone-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.phone-top .pill {
+  font-size: 12px;
+}
+
+.phone-top__mark {
+  width: 52px;
+  height: auto;
+}
+
+.phone-view {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.phone-hero {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+.phone-title {
+  font-size: clamp(56px, 19vw, 96px);
+  font-weight: 900;
+  letter-spacing: var(--display-tracking);
+  line-height: 0.9;
+  white-space: nowrap;
+}
+
+.phone-card {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-5);
+  text-align: left;
+}
+
+/* 16px+ so iPhone Safari doesn't zoom in on focus */
+.phone-card .field {
+  min-height: 60px;
+  font-size: 22px;
+}
+
+.phone-card .field-error {
+  min-height: 1.2em;
+  margin-top: calc(-1 * var(--space-2));
+  padding-inline: var(--space-4);
+}
+
+.phone-card__go {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+/* JOINING… / CONNECTING… is a status, so it stays readable (as a white button) */
+.phone-card__go:disabled {
+  color: var(--ink);
+  background: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 0 var(--shadow-offset) 0 var(--ink);
+  cursor: progress;
+}
+
+.phone-card__peek {
+  width: 92px;
+  height: 92px;
+  top: -44px;
+  right: -8px;
+  color: var(--blue);
+  rotate: 12deg;
+}
+
+.phone-note {
+  max-width: 34ch;
+}
+
+/* Wi-Fi / mobile data picker: two pills, the chosen one fills yellow */
+.choice {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
+
+.choice__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.choice__opt {
+  position: relative;
+  display: block;
+}
+
+.choice__opt input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.choice__opt span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--space-2);
+  font-size: clamp(13px, 3.8vw, 15px);
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  transition:
+    translate var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast) var(--ease-spring);
+}
+
+.choice__opt input:checked + span {
+  background: var(--yellow);
+  box-shadow: 0 3px 0 var(--ink);
+  translate: 0 -2px;
+}
+
+.choice__opt input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.choice--compact {
+  width: 100%;
+}
+
+.choice--compact .choice__opt span {
+  min-height: 42px;
+  font-size: 13px;
+}
+
+/* In the party */
+.you {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.1;
+  background: var(--player, var(--paper));
+}
+
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: calc(-1 * var(--space-2));
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.conn::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background: var(--green);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 50%;
+}
+
+.conn[data-state="down"]::before {
+  background: var(--red);
+  animation: blink 1s steps(1) infinite;
+}
+
+.round-box {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.round-box__status {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.round-box__note {
+  min-height: 1.45em;
+  max-width: 34ch;
+}
+
+/* The phone's own TAP BATTLE bar */
+.battle-bar {
+  position: relative;
+  width: 100%;
+  height: 44px;
+  overflow: hidden;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.battle-bar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--player, var(--yellow));
+  border-right: var(--stroke) solid var(--ink);
+}
+
+.battle-bar__label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+/* Where the bar is: saved on the phone, and whether the server has it yet */
+.sync {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sync::before {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--green);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 50%;
+}
+
+.sync[data-state="sending"]::before { background: var(--yellow); }
+.sync[data-state="offline"]::before { background: var(--red); }
+.sync[data-state="lost"] { color: var(--red); }
+.sync[data-state="lost"]::before { background: var(--red); }
+
+.round-box__start {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.result[data-rank="1"] { background: var(--rank-1); }
+.result[data-rank="2"] { background: var(--rank-2); }
+.result[data-rank="3"] { background: var(--rank-3); }
+
+.tap {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  width: min(72vw, 300px);
+  aspect-ratio: 1;
+  margin-bottom: 10px;
+  color: var(--ink);
+  background: var(--player, var(--yellow));
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 10px 0 var(--ink);
+  cursor: pointer;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  transition:
+    translate 60ms var(--ease-out),
+    box-shadow 60ms var(--ease-out);
+}
+
+/* Before GO and after TIME the button is a plain white counter */
+.tap.is-waiting {
+  background: var(--paper);
+}
+
+.tap.is-pressed {
+  translate: 0 10px;
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.tap__label {
+  font-size: clamp(56px, 18vw, 84px);
+  font-weight: 900;
+  letter-spacing: var(--display-tracking);
+  line-height: 0.85;
+}
+
+.tap__count {
+  min-width: 2.6em;
+  padding: 0.2em 0.6em 0.14em;
+  font-size: 20px;
+  background: var(--paper);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-pill);
+}
+
+/* SNAKE BATTLE: a trackpad. Slide anywhere on it to steer; the edge arrow shows the last turn */
+.pad {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(92vw, 420px);
+  height: clamp(280px, 52vh, 480px);
+  margin-bottom: 8px;
+  overflow: hidden;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: center;
+  border: 4px solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 0 var(--ink);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.pad.is-touching {
+  cursor: grabbing;
+}
+
+.pad__edge {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pad__edge svg {
+  width: 50%;
+  height: 50%;
+  fill: var(--ink);
+}
+
+.pad__edge--up { top: 12px; left: calc(50% - 26px); }
+.pad__edge--down { bottom: 12px; left: calc(50% - 26px); }
+.pad__edge--left { left: 12px; top: calc(50% - 26px); }
+.pad__edge--right { right: 12px; top: calc(50% - 26px); }
+.pad__edge--down svg { rotate: 180deg; }
+.pad__edge--left svg { rotate: -90deg; }
+.pad__edge--right svg { rotate: 90deg; }
+
+.pad__edge.is-on {
+  background: var(--player, var(--yellow));
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.pad__center {
+  display: grid;
+  place-items: center;
+  width: clamp(88px, 26vw, 120px);
+  aspect-ratio: 1;
+  font-size: clamp(28px, 9vw, 44px);
+  line-height: 1;
+  background: var(--player, var(--yellow));
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pad__hint {
+  position: absolute;
+  bottom: 76px;
+  font-size: var(--small-size);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.pad.is-touching .pad__hint {
+  visibility: hidden;
+}
+
+/* Follows the finger so players can see the pad is reading them */
+.pad__dot {
+  position: absolute;
+  top: -22px;
+  left: -22px;
+  width: 44px;
+  height: 44px;
+  background: var(--player, var(--yellow));
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Before GO, once you're out, or between rounds: the pad still reads slides, but looks idle */
+.pad.is-waiting .pad__center {
+  background: var(--paper);
+}
+
+/* In a round (3-2-1, play, results): one screen that never scrolls. The controls take
+   whatever height is left after the colour pill and the status. */
+body.phone.in-game {
+  position: fixed;
+  inset: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.in-game .phone-page {
+  height: 100%;
+  grid-template-rows: minmax(0, 1fr);
+  padding-top: max(var(--space-3), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.in-game .phone-top,
+.in-game .phone-stats,
+.in-game .choice--compact,
+.in-game .phone-note,
+.in-game #leave,
+.in-game .round-box__start,
+.in-game .conn:not([data-state="down"]) {
+  display: none;
+}
+
+.in-game #view-play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.in-game .you {
+  flex: none;
+  font-size: 18px;
+}
+
+.in-game .conn {
+  flex: none;
+  margin-top: 0;
+}
+
+.in-game .round-box {
+  flex: none;
+  gap: var(--space-1);
+}
+
+.in-game .round-box__note {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* The trackpad fills the rest of the screen */
+.in-game .pad {
+  flex: 1 1 0;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+/* The TAP circle is as big as the space left allows, and stays round */
+.tap-zone {
+  display: contents;
+}
+
+.in-game .tap-zone {
+  display: grid;
+  place-items: center;
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+  container-type: size;
+}
+
+.in-game .tap-zone:has(> .tap[hidden]) {
+  display: none;
+}
+
+.in-game .tap {
+  width: min(100cqw, 100cqh - 12px);
+  margin-bottom: 12px;
+}
+
+.phone-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+  margin: 0;
+}
+
+.phone-stats__item {
+  padding: var(--space-3);
+  background: var(--paper);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-inner);
+}
+
+.phone-stats dt {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.phone-stats dd {
+  margin: 0;
+  font-size: clamp(16px, 5.6vw, 26px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.phone-stats dd[data-verdict="LAGGY"] {
+  color: var(--red);
+}
+
+.phone-msg {
+  padding-top: var(--space-7);
+}
+
+.phone-msg .t-h1 {
+  /* Sized so the longest heading, <REMOVED>, fits a 320px-wide phone */
+  font-size: min(11.5vw, 64px);
+  white-space: nowrap;
+}
+
+/* ================= Big screen ================= */
+.screen-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 100vh;
+  padding: var(--space-4) clamp(16px, 2.5vw, 40px) var(--space-5);
+  isolation: isolate;
+}
+
+.screen-top__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.round-pill {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Disabled START (a round is on): white, like every disabled button on the design sheet */
+.screen-top__left .btn:disabled {
+  background: var(--paper);
+}
+
+.round-pill[data-phase="countdown"],
+.round-pill[data-phase="playing"] {
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.screen-page .banner {
+  margin: 0;
+}
+
+.screen-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 25vw) minmax(0, 1fr);
+  gap: clamp(16px, 2vw, 32px);
+  flex: 1;
+  min-height: 0;
+}
+
+.screen-side {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 16px);
+  min-height: 0;
+  /* The heading sizes itself to this column */
+  container-type: inline-size;
+}
+
+.screen-title {
+  font-size: min(20cqi, 11vh, 110px);
+  font-weight: 900;
+  letter-spacing: var(--display-tracking);
+  line-height: 0.9;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.join-card {
+  display: grid;
+  justify-items: center;
+  gap: clamp(6px, 1.2vh, 12px);
+  padding: clamp(14px, 2vh, 24px);
+  text-align: center;
+}
+
+.join-card__peek {
+  width: 96px;
+  height: 96px;
+  right: -30px;
+  bottom: 30%;
+  color: var(--yellow);
+  rotate: -10deg;
+}
+
+.qr {
+  width: min(100%, 300px, 28vh);
+  aspect-ratio: 1;
+  padding: 10px;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-inner);
+}
+
+.qr svg {
+  width: 100%;
+  height: 100%;
+}
+
+.qr-status {
+  font-weight: 800;
+}
+
+.qr-status[data-tunnel="missing"],
+.qr-status[data-tunnel="down"] {
+  color: var(--red);
+}
+
+.join-url {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.verdict {
+  padding: var(--space-3) var(--space-4) 0.6em;
+  font-size: clamp(18px, 1.5vw, 26px);
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+}
+
+.verdict[data-level="good"] { background: var(--green); }
+.verdict[data-level="warn"] { background: var(--yellow); }
+.verdict[data-level="bad"] { background: var(--red); }
+
+.verdict-rule {
+  margin-top: calc(-1 * var(--space-1));
+  text-align: center;
+}
+
+/* Tips along the bottom: a thin-pill marquee */
+.tips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: none;
+  min-width: 0;
+}
+
+.tips__label {
+  flex: none;
+  margin: 0;
+}
+
+.tips__marquee {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Half the track must be exactly one set of tips plus its gaps, or the loop jumps */
+.tips__marquee .marquee__track {
+  padding-right: var(--space-4);
+}
+
+.tips__marquee .pill {
+  font-size: clamp(14px, 1.2vw, 20px);
+  font-weight: 600;
+}
+
+/* The players, with the countdown and results laid over them */
+.stage {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+
+.stage__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  isolation: isolate;
+}
+
+.overlay-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  width: min(640px, 100%);
+  max-height: 100%;
+  padding: clamp(20px, 3vh, 40px);
+  text-align: center;
+}
+
+.countdown {
+  font-size: clamp(120px, 26vh, 280px);
+  line-height: 0.85;
+}
+
+.results__title {
+  font-size: clamp(40px, 7vh, 72px);
+  font-weight: 900;
+  letter-spacing: var(--display-tracking);
+  line-height: 0.95;
+}
+
+.results__peek {
+  width: 120px;
+  height: 120px;
+  top: -48px;
+  right: -40px;
+  color: var(--blue);
+  rotate: 12deg;
+}
+
+.results__board {
+  width: 100%;
+}
+
+.results__board .board__row {
+  grid-template-columns: auto auto 1fr auto;
+  min-height: clamp(48px, 7vh, 64px);
+}
+
+/* The player's own colour next to their name */
+.results__board .board__row[data-color]::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 1;
+  width: 18px;
+  height: 18px;
+  background: var(--player);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 50%;
+}
+
+.results__board .board__name {
+  grid-column: 3;
+  font-size: clamp(18px, 2.6vh, 26px);
+  text-align: left;
+}
+
+.results__board .board__score {
+  grid-column: 4;
+  font-size: clamp(18px, 2.6vh, 26px);
+}
+
+/* SNAKE BATTLE rows: how it went, in small type under the name */
+.results__board .board__row--detail {
+  grid-template-rows: auto auto;
+  row-gap: 0;
+  padding-block: 6px;
+}
+
+.results__board .board__row--detail .board__rank,
+.results__board .board__row--detail .board__score {
+  grid-row: 1 / span 2;
+}
+
+.results__board .board__row--detail::after {
+  grid-row: 1 / span 2;
+}
+
+.results__board .board__row--detail .board__name {
+  align-self: end;
+  line-height: 1.1;
+}
+
+.board__detail {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: start;
+  font-size: clamp(11px, 1.6vh, 14px);
+  font-weight: 800;
+  text-align: left;
+}
+
+.results__board .board__row--empty .board__name {
+  grid-column: 2 / 4;
+}
+
+.results__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* TAP BATTLE: one tall bar per player, filling in their colour */
+.battle {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(12px, 2.4vh, 28px);
+  width: 100%;
+  height: 100%;
+}
+
+.battle__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.battle__timer {
+  min-width: 2.2em;
+  padding: 0.12em 0.4em 0.04em;
+  font-size: clamp(36px, 7vh, 80px);
+  line-height: 1;
+  text-align: center;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-inner);
+  box-shadow: var(--shadow);
+}
+
+.battle__lanes {
+  display: grid;
+  grid-auto-columns: minmax(0, 200px);
+  grid-auto-flow: column;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 64px);
+  min-height: 0;
+}
+
+.battle-col {
+  --level: 0;
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  justify-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 0;
+}
+
+.battle-col__track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.battle-col__fill {
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(var(--level) * 1%);
+  background: var(--player);
+  box-shadow: 0 calc(-1 * var(--stroke)) 0 var(--ink);
+  /* One report's worth of glide */
+  transition: height 120ms linear;
+}
+
+.battle-col.is-full .battle-col__fill {
+  box-shadow: none;
+}
+
+.battle-col__badge {
+  position: absolute;
+  top: var(--space-4);
+  z-index: 1;
+  font-size: clamp(16px, 2.4vh, 24px);
+}
+
+.battle-col__pct {
+  font-size: clamp(28px, 5vh, 56px);
+  line-height: 1;
+}
+
+.battle-col__name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(16px, 2.4vh, 26px);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Along the bottom: the tips, then which game the next round plays */
+.screen-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex: none;
+  min-width: 0;
+}
+
+.screen-foot .tips {
+  flex: 1;
+}
+
+.game-switch {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.game-switch__label {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.game-switch .btn[aria-pressed="true"] {
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.game-switch .btn:disabled {
+  color: var(--muted);
+  background: var(--paper);
+}
+
+/* SNAKE BATTLE: the board, with who's who beside it */
+.snake {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(12px, 2vh, 24px);
+  width: 100%;
+  height: 100%;
+}
+
+.snake__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.snake__alive {
+  font-variant-numeric: tabular-nums;
+}
+
+.snake__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(220px, 19vw, 320px);
+  gap: clamp(16px, 2vw, 32px);
+  min-height: 0;
+}
+
+.snake__board {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.snake__canvas {
+  position: absolute;
+  inset: 0 0 auto;
+  margin: 0 auto;
+  border: var(--stroke) solid var(--ink);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+
+.snake__countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: fit-content;
+  height: fit-content;
+  min-width: 1.4em;
+  margin: auto;
+  padding: 0.12em 0.3em 0.02em;
+  /* Smaller than TAP BATTLE's countdown, so the name tags on the board stay in view */
+  font-size: clamp(64px, 14vh, 150px);
+  text-align: center;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.snake__legend {
+  display: grid;
+  align-content: start;
+  gap: clamp(10px, 1.6vh, 16px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "swatch name len"
+    "swatch status status";
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: 2px;
+  padding: clamp(8px, 1.2vh, 14px) var(--space-4);
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-inner);
+  box-shadow: var(--shadow);
+}
+
+.legend__swatch {
+  grid-area: swatch;
+  width: clamp(28px, 3.6vh, 40px);
+  aspect-ratio: 1;
+  background: var(--player);
+  border: var(--stroke) solid var(--ink);
+  border-radius: 50%;
+}
+
+.legend__name {
+  grid-area: name;
+  overflow: hidden;
+  font-size: clamp(16px, 2.4vh, 24px);
+  font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legend__len {
+  grid-area: len;
+  font-size: clamp(20px, 3.2vh, 32px);
+  line-height: 1;
+}
+
+.legend__status {
+  grid-area: status;
+  font-size: clamp(11px, 1.5vh, 14px);
+  font-weight: 800;
+}
+
+/* Out of the round: the row goes grey, but keeps its colour dot */
+.legend__row.is-out {
+  border-color: var(--muted);
+  box-shadow: none;
+}
+
+.legend__row.is-out .legend__name,
+.legend__row.is-out .legend__len,
+.legend__row.is-out .legend__status {
+  color: var(--muted);
+}
+
+/* Projectors and narrow windows: the legend moves under the board, two by two */
+@media (max-width: 1199px) {
+  .snake__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .snake__legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .snake .pill--lg {
+    font-size: 18px;
+  }
+}
+
+/* Player cards, 2 by 2 */
+.players {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: clamp(20px, 2vw, 36px);
+  min-height: 0;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.4vh, 16px);
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(16px, 1.6vw, 28px);
+}
+
+/* Once popped in, no scale is left on the card, so its corner shape stays behind it */
+.player.pop-in {
+  animation-fill-mode: backwards;
+}
+
+.player__peek {
+  width: clamp(64px, 6vw, 100px);
+  height: clamp(64px, 6vw, 100px);
+  top: -28px;
+  right: -22px;
+  color: var(--player);
+  rotate: 14deg;
+}
+
+.player__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.player__badge {
+  display: grid;
+  place-items: center;
+  width: clamp(40px, 3.4vw, 60px);
+  height: clamp(40px, 3.4vw, 60px);
+  font-size: clamp(20px, 1.8vw, 30px);
+  background: var(--player, var(--paper));
+  border: var(--stroke) solid var(--ink);
+  border-radius: 50%;
+}
+
+.player__badge.is-tap {
+  animation: tap-pop 260ms var(--ease-spring);
+}
+
+.player__name {
+  overflow: hidden;
+  font-size: clamp(22px, 2.3vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The phone's fake game update: a dot sliding along a track */
+.lane {
+  --x: 0;
+  position: relative;
+  flex: none;
+  height: clamp(36px, 4.4vh, 48px);
+  background: var(--paper);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-pill);
+}
+
+.lane__dot {
+  position: absolute;
+  top: 50%;
+  left: calc(4px + var(--x) * (100% - 8px - var(--dot)));
+  --dot: calc(clamp(36px, 4.4vh, 48px) - 12px);
+  width: var(--dot);
+  height: var(--dot);
+  translate: 0 -50%;
+  background: var(--player);
+  border: var(--stroke) solid var(--ink);
+  border-radius: 50%;
+  /* One update's worth of glide: smooth when updates flow, visibly stuck when they don't */
+  transition: left 100ms linear;
+}
+
+.player__ping {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: end;
+  gap: var(--space-4);
+  flex: 1;
+  min-height: 0;
+}
+
+.player__pingside {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding-bottom: 0.3em;
+}
+
+.player__big {
+  font-size: clamp(44px, min(5.4vw, 9vh), 108px);
+  line-height: 0.95;
+}
+
+.player__big small {
+  margin-left: 0.12em;
+  font-size: 0.3em;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.spark {
+  width: 100%;
+  height: clamp(28px, 5vh, 56px);
+}
+
+.spark rect {
+  fill: var(--ink);
+}
+
+.spark rect.spark__slow {
+  fill: var(--red);
+}
+
+.player__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.player__stats > div {
+  min-width: 0;
+  padding: 6px 4px 4px;
+  text-align: center;
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 14px;
+}
+
+.player__stats dt {
+  overflow: hidden;
+  font-size: clamp(9px, 0.7vw, 12px);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player__stats dd {
+  margin: 0;
+  font-size: clamp(18px, 1.6vw, 30px);
+  line-height: 1.1;
+}
+
+.player__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.player__verdict[data-verdict="GOOD"] { background: var(--player); }
+.player__verdict[data-verdict="LAGGY"] { color: var(--paper); background: var(--ink); }
+
+.player__verdict[data-verdict="RECONNECTING"],
+.player__verdict[data-verdict="PAUSED"],
+.player__verdict[data-verdict="MEASURING"] {
+  color: var(--ink);
+  border-style: dashed;
+  box-shadow: none;
+}
+
+/* A phone that dropped out: greyed until it rejoins or its spot frees up */
+.player.is-down .lane,
+.player.is-down .player__stats > div {
+  border-color: var(--muted);
+}
+
+.player.is-down .lane__dot {
+  background: var(--muted);
+  border-color: var(--muted);
+}
+
+.player.is-down .player__big,
+.player.is-down .player__stats dd {
+  color: var(--muted);
+}
+
+.player--empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--muted);
+  background: var(--paper);
+  border: var(--stroke) dashed var(--muted);
+  border-radius: var(--radius-card);
+}
+
+.player--empty .player__badge {
+  color: var(--muted);
+  background: var(--paper);
+  border-color: var(--muted);
+  border-style: dashed;
+}
+
+/* A TV or a laptop screen: everything fits without scrolling */
+@media (min-width: 1000px) and (min-height: 680px) {
+  .screen-page {
+    height: 100vh;
+  }
+}
+
+/* Short screens (720p TVs, small laptops): tighter cards so it still fits */
+@media (min-width: 1000px) and (min-height: 680px) and (max-height: 840px) {
+  .screen-page {
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+  }
+
+  .screen-top {
+    min-height: 48px;
+  }
+
+  .screen-title {
+    font-size: min(20cqi, 9vh, 110px);
+  }
+
+  .qr {
+    width: min(100%, 300px, 23vh);
+  }
+
+  .join-card .t-small,
+  .verdict-rule {
+    font-size: 11px;
+  }
+
+  .verdict {
+    font-size: 16px;
+  }
+
+  .player {
+    gap: 6px;
+    padding: 12px 16px;
+  }
+
+  .player__badge {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .player__name {
+    font-size: 22px;
+  }
+
+  .lane {
+    height: 28px;
+  }
+
+  .lane__dot {
+    --dot: 18px;
+  }
+
+  .player__big {
+    font-size: clamp(40px, 6.4vh, 60px);
+  }
+
+  .spark {
+    height: 24px;
+  }
+
+  .player__stats > div {
+    padding: 2px 4px;
+  }
+
+  .player__stats dt {
+    font-size: 9px;
+  }
+
+  .player__stats dd {
+    font-size: 16px;
+  }
+
+  .player__foot .pill--sm {
+    font-size: 12px;
+  }
+}
+
+/* Projectors and small laptops (1024-1199px wide): stats wrap to two rows */
+@media (min-width: 1000px) and (max-width: 1199px) {
+  .player__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .player__stats dt {
+    font-size: 10px;
+  }
+
+  .player__head .player__net {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 999px) {
+  /* The club pill gets its own centred row under the buttons and the logo */
+  .screen-top {
+    grid-template-columns: 1fr auto;
+  }
+
+  .screen-top .pill--header {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .screen-grid,
+  .players {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .players {
+    grid-auto-rows: auto;
+  }
+
+  .player {
+    min-height: 360px;
+  }
+}

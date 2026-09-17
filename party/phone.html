@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>GDG Party</title>
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="party/css/party.css">
+</head>
+<body class="phone">
+  <main class="phone-page">
+    <header class="phone-top">
+      <span class="pill pill--sm">GDG ON CAMPUS UOBD</span>
+      <img class="phone-top__mark" src="assets/logo-mark.svg" alt="GDG">
+    </header>
+
+    <section class="phone-view" id="view-join" aria-labelledby="join-title">
+      <div class="phone-hero">
+        <h1 id="join-title" class="phone-title bracketed">PARTY</h1>
+        <p class="pill pill--thin pill--sm">CONNECTION TEST</p>
+      </div>
+
+      <form class="card phone-card" id="join-form" novalidate>
+        <svg class="shape card__peek phone-card__peek" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
+        <label class="t-pill" for="name">WHAT'S YOUR NAME?</label>
+        <input class="field" id="name" name="name" type="text" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="NAME + INITIAL" aria-describedby="name-error">
+        <p class="field-error" id="name-error" aria-live="polite"></p>
+
+        <fieldset class="choice">
+          <legend class="t-pill">YOU'RE ON</legend>
+          <div class="choice__row">
+            <label class="choice__opt"><input type="radio" name="network" value="wifi"><span>WI-FI</span></label>
+            <label class="choice__opt"><input type="radio" name="network" value="cellular"><span>MOBILE DATA</span></label>
+          </div>
+        </fieldset>
+
+        <button class="btn btn--primary btn--lg phone-card__go" type="submit" id="join-btn">&lt;JOIN&gt;</button>
+      </form>
+      <p class="t-small phone-note">UP TO 4 PHONES. KEEP THIS PAGE OPEN WHILE YOU TEST.</p>
+    </section>
+
+    <section class="phone-view" id="view-play" hidden aria-labelledby="you">
+      <p class="pill pill--lg you" id="you">YOU'RE RED</p>
+      <p class="conn" id="conn" aria-live="polite">CONNECTED</p>
+
+      <section class="round-box" aria-label="Round">
+        <p class="pill pill--lg result" id="result" role="status" hidden></p>
+        <p class="round-box__status" id="round-status">JOINING THE LOBBY…</p>
+        <div class="battle-bar" id="bar" hidden aria-hidden="true">
+          <div class="battle-bar__fill" id="bar-fill"></div>
+          <span class="battle-bar__label t-score" id="bar-label">0%</span>
+        </div>
+        <p class="sync" id="sync" hidden></p>
+        <p class="t-small round-box__note" id="round-note"></p>
+        <button class="btn btn--primary btn--lg round-box__start" type="button" id="start-btn" hidden>&lt;START BATTLE&gt;</button>
+      </section>
+
+      <div class="tap-zone">
+        <button class="tap" id="tap" type="button">
+          <span class="tap__label" id="tap-label">TAP</span>
+          <span class="tap__count t-score" id="tap-count">0</span>
+        </button>
+      </div>
+
+      <!-- SNAKE BATTLE controls: a trackpad. Slide a finger to turn; keep gliding to turn again. -->
+      <div class="pad" id="pad" hidden>
+        <span class="pad__edge pad__edge--up" data-dir="up" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 21 18H3Z"/></svg></span>
+        <span class="pad__edge pad__edge--right" data-dir="right" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 21 18H3Z"/></svg></span>
+        <span class="pad__edge pad__edge--down" data-dir="down" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 21 18H3Z"/></svg></span>
+        <span class="pad__edge pad__edge--left" data-dir="left" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 21 18H3Z"/></svg></span>
+        <span class="pad__center t-score" id="pad-center" aria-live="polite">4</span>
+        <span class="pad__hint">SLIDE TO STEER</span>
+        <span class="pad__dot" id="pad-dot" hidden></span>
+      </div>
+
+      <dl class="phone-stats">
+        <div class="phone-stats__item">
+          <dt>PING</dt>
+          <dd class="t-score" id="ping">—</dd>
+        </div>
+        <div class="phone-stats__item">
+          <dt>LINK</dt>
+          <dd id="verdict">MEASURING</dd>
+        </div>
+      </dl>
+
+      <fieldset class="choice choice--compact">
+        <legend class="t-small">SWITCHED NETWORK? TELL THE SCREEN:</legend>
+        <div class="choice__row">
+          <label class="choice__opt"><input type="radio" name="network-live" value="wifi"><span>WI-FI</span></label>
+          <label class="choice__opt"><input type="radio" name="network-live" value="cellular"><span>MOBILE DATA</span></label>
+        </div>
+      </fieldset>
+
+      <p class="t-small phone-note">WATCH YOUR DOT ON THE BIG SCREEN. BETWEEN ROUNDS, TRY LOCKING THIS PHONE FOR 5 SECONDS, THEN COME BACK.</p>
+      <button class="link" type="button" id="leave">LEAVE THE PARTY</button>
+    </section>
+
+    <section class="phone-view phone-msg" id="view-msg" hidden aria-labelledby="msg-title">
+      <h2 id="msg-title" class="t-h1 bracketed">FULL</h2>
+      <p class="t-body" id="msg-text"></p>
+      <button class="btn btn--primary btn--lg" type="button" id="msg-action">&lt;TRY AGAIN&gt;</button>
+    </section>
+  </main>
+
+  <script type="module" src="party/js/phone.js"></script>
+</body>
+</html>

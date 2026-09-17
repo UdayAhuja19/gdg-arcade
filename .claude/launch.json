@@ -4,8 +4,42 @@
     {
       "name": "gdg-arcade",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "party-tunnel",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "party"
+      ],
+      "port": 3101
+    },
+    {
+      "name": "party-screen",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "party",
+        "--",
+        "--local"
+      ],
+      "port": 3101
+    },
+    {
+      "name": "party-lan",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "party",
+        "--",
+        "--lan"
+      ],
+      "port": 3101
     }
   ]
 }

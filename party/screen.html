@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Party Test · GDG Arcade</title>
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="party/css/party.css">
+</head>
+<body class="screen">
+  <main class="screen-page">
+    <header class="topbar screen-top">
+      <div class="screen-top__left">
+        <span class="pill pill--sm round-pill" id="round-pill" aria-live="polite">LOBBY</span>
+        <button class="btn btn--sm btn--primary" type="button" id="start" disabled>&lt;START&gt;</button>
+        <button class="btn btn--sm" type="button" id="clear">CLEAR ROOM</button>
+      </div>
+      <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+      <img class="logo-mark" src="assets/logo-mark.svg" alt="GDG">
+    </header>
+
+    <p class="banner" id="offline" hidden>THE PARTY SERVER ISN'T RUNNING. START IT WITH NPM RUN PARTY.</p>
+
+    <div class="screen-grid">
+      <aside class="screen-side">
+        <h1 class="screen-title bracketed">PARTY</h1>
+
+        <section class="card join-card" aria-labelledby="join-title">
+          <svg class="shape card__peek join-card__peek" aria-hidden="true"><use href="assets/shapes.svg#blob"/></svg>
+          <h2 id="join-title" class="t-pill">SCAN TO JOIN</h2>
+          <div class="qr" id="qr" aria-hidden="true"></div>
+          <p class="qr-status t-small" id="join-status">STARTING…</p>
+          <p class="pill pill--thin pill--sm join-url" id="join-url" hidden></p>
+          <p class="t-small" id="slots-left">4 SPOTS OPEN</p>
+        </section>
+
+        <p class="verdict" id="verdict" data-level="waiting" aria-live="polite">SCAN THE QR CODE TO JOIN</p>
+
+        <p class="t-small verdict-rule">GOOD = 95% OF PINGS UNDER 250MS, NO MORE THAN 2 STUTTERS A MINUTE, AND NO MISSED PINGS.</p>
+      </aside>
+
+      <div class="stage">
+        <section class="players" id="players" aria-label="Players"></section>
+
+        <div class="stage__overlay" id="overlay" hidden>
+          <section class="card overlay-card" id="countdown" hidden aria-live="assertive">
+            <p class="t-pill">ROUND <span id="cd-round">1</span> · <span id="cd-game">TAP BATTLE</span></p>
+            <p class="countdown t-score" id="cd-number">3</p>
+            <p class="t-body">TAP TO FILL YOUR BAR. STOP AND IT DRAINS. FIRST TO FILL IT WINS.</p>
+          </section>
+
+          <section class="battle" id="battle" hidden aria-label="Tap battle">
+            <header class="battle__head">
+              <p class="pill pill--lg" id="battle-round">ROUND 1 · TAP BATTLE</p>
+              <p class="pill pill--lg pill--filled-yellow battle__winner" id="battle-winner" hidden></p>
+              <p class="battle__timer t-score" id="battle-timer">30</p>
+            </header>
+            <div class="battle__lanes" id="battle-lanes"></div>
+          </section>
+
+          <section class="snake" id="snake" hidden aria-label="Snake battle">
+            <header class="battle__head">
+              <p class="pill pill--lg" id="snake-round">ROUND 1 · SNAKE BATTLE</p>
+              <p class="pill pill--lg pill--filled-yellow" id="snake-winner" hidden></p>
+              <div class="snake__actions">
+                <p class="pill pill--lg snake__alive" id="snake-alive">0 ALIVE</p>
+                <button class="btn btn--sm" type="button" id="snake-end">END ROUND</button>
+              </div>
+            </header>
+            <div class="snake__body">
+              <div class="snake__board" id="snake-board">
+                <p class="countdown t-score snake__countdown" id="snake-countdown" hidden aria-live="assertive">3</p>
+              </div>
+              <ol class="snake__legend" id="snake-legend" aria-label="Who is which snake"></ol>
+            </div>
+          </section>
+
+          <section class="card overlay-card results" id="results" hidden aria-labelledby="results-title">
+            <svg class="shape card__peek results__peek" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
+            <h2 id="results-title" class="results__title bracketed">RESULTS</h2>
+            <p class="pill pill--lg pill--filled-yellow" id="results-winner">SARA K WINS!</p>
+            <p class="t-pill" id="results-round">ROUND 1 · TAP BATTLE</p>
+            <ol class="board results__board" id="results-board"></ol>
+            <div class="results__actions">
+              <button class="btn btn--primary btn--lg" type="button" id="rematch">&lt;PLAY AGAIN&gt;</button>
+              <button class="btn" type="button" id="to-lobby">BACK TO LOBBY</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <footer class="screen-foot">
+      <section class="tips" aria-labelledby="tips-title">
+        <h2 id="tips-title" class="pill pill--sm pill--filled-ink tips__label">&lt;TRY THIS&gt;</h2>
+        <ul class="sr-only">
+          <li>JOIN 4 PHONES ON CAMPUS WI-FI</li>
+          <li>SWITCH ONE PHONE TO MOBILE DATA</li>
+          <li>LOCK A PHONE FOR 5 SECONDS, THEN UNLOCK IT</li>
+          <li>WALK TO THE FAR END OF THE BOOTH</li>
+          <li>TURN WI-FI OFF AND ON AGAIN</li>
+        </ul>
+        <div class="marquee tips__marquee" aria-hidden="true">
+          <div class="marquee__track" id="tips-track">
+            <span class="pill pill--thin">JOIN 4 PHONES ON CAMPUS WI-FI</span>
+            <span class="pill pill--thin">SWITCH ONE PHONE TO MOBILE DATA</span>
+            <span class="pill pill--thin">LOCK A PHONE FOR 5 SECONDS, THEN UNLOCK IT</span>
+            <span class="pill pill--thin">WALK TO THE FAR END OF THE BOOTH</span>
+            <span class="pill pill--thin">TURN WI-FI OFF AND ON AGAIN</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="game-switch" role="group" aria-labelledby="game-switch-label">
+        <span class="t-small game-switch__label" id="game-switch-label">NEXT GAME</span>
+        <button class="btn btn--sm" type="button" data-game="tap" aria-pressed="true">TAP BATTLE</button>
+        <button class="btn btn--sm" type="button" data-game="snake" aria-pressed="false">SNAKE BATTLE</button>
+      </div>
+    </footer>
+  </main>
+
+  <template id="player-tpl">
+    <article class="card player">
+      <svg class="shape card__peek player__peek" aria-hidden="true"><use href=""/></svg>
+      <header class="player__head">
+        <span class="player__badge t-score"></span>
+        <h2 class="player__name"></h2>
+        <span class="pill pill--thin pill--sm player__net"></span>
+      </header>
+
+      <div class="lane" aria-hidden="true"><span class="lane__dot"></span></div>
+
+      <div class="player__ping">
+        <p class="player__big t-score"><span data-f="ping">—</span><small>MS</small></p>
+        <div class="player__pingside">
+          <p class="t-small">PING · MEDIAN <b class="t-score" data-f="median">—</b> · 95% <b class="t-score" data-f="p95">—</b></p>
+          <svg class="spark" viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+      </div>
+
+      <dl class="player__stats">
+        <div><dt>UPDATES/S</dt><dd class="t-score" data-f="ups">—</dd></div>
+        <div><dt>STUTTERS</dt><dd class="t-score" data-f="stutters">0</dd></div>
+        <div><dt>MISSED</dt><dd class="t-score" data-f="missed">0</dd></div>
+        <div><dt>REJOINS</dt><dd class="t-score" data-f="rejoins">0</dd></div>
+        <div><dt>TAPS</dt><dd class="t-score" data-f="taps">0</dd></div>
+      </dl>
+
+      <footer class="player__foot">
+        <span class="pill pill--sm player__verdict" data-f="verdict">MEASURING</span>
+        <button class="link player__kick" type="button">REMOVE</button>
+      </footer>
+    </article>
+  </template>
+
+  <template id="empty-tpl">
+    <article class="player player--empty">
+      <span class="player__badge t-score"></span>
+      <p class="t-h2">WAITING FOR PLAYER <span data-f="n"></span></p>
+      <p class="t-small">SCAN THE QR CODE ON A PHONE</p>
+    </article>
+  </template>
+
+  <script type="module" src="party/js/screen.js"></script>
+</body>
+</html>
