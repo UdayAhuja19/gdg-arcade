@@ -1,4 +1,4 @@
-// A TAP BATTLE round (lobby -> countdown -> playing -> results), driven with a fake clock.
+// A MASH BATTLE round (lobby -> countdown -> playing -> results), driven with a fake clock.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRound, LATE_REPORT_MS, MIN_PLAYERS, TIMING } from "../server/party/round.js";

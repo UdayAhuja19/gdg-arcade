@@ -1,4 +1,4 @@
-// The SNAKE BATTLE board on the big screen: graph paper, food, and one outlined snake per
+// The SNAKE ROYALE board on the big screen: graph paper, food, and one outlined snake per
 // player in their colour. It only draws what the server sends (an `arena` frame per step).
 import { C, disc, label, paper, sticker } from "../../js/engine/draw.js";
 
@@ -15,7 +15,7 @@ export function createSnakeBoard(root) {
   const canvas = document.createElement("canvas");
   canvas.className = "snake__canvas";
   canvas.setAttribute("role", "img");
-  canvas.setAttribute("aria-label", "Snake battle board");
+  canvas.setAttribute("aria-label", "Snake royale board");
   root.append(canvas);
   const ctx = canvas.getContext("2d");
 

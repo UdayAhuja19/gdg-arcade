@@ -488,7 +488,7 @@ test("in a snake battle, phones steer, the laptop runs the board, and the last s
     screen.send({ t: "game", game: "snake" });
     await red.phone.next((m) => m.t === "round" && m.game === "snake");
 
-    // The host phone starts it, like TAP BATTLE.
+    // The host phone starts it, like MASH BATTLE.
     red.phone.send({ t: "start" });
     const countdown = await red.phone.next((m) => m.t === "round" && m.phase === "countdown");
     assert.equal(countdown.inRound, true);

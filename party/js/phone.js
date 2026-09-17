@@ -1,7 +1,7 @@
 // A phone in the party connection test. It joins the room, answers pings, sends a
 // fake game update 10 times a second (a dot sliding back and forth), and sends a tap
 // whenever the big button is pressed. It rejoins by itself after a dropout.
-// In rounds it plays TAP BATTLE (its own bar) or steers in SNAKE BATTLE (the laptop runs
+// In rounds it plays MASH BATTLE (its own bar) or steers in SNAKE ROYALE (the laptop runs
 // the board; this phone only sends turns).
 import { normalizeName } from "../../js/shared/names.js";
 import { BAR_FULL, createBar } from "../../js/shared/tap-battle.js";
@@ -89,7 +89,7 @@ let lastHeardAt = 0;
 let updateTimer = 0;
 let wakeLock = null;
 let taps = 0;
-// The latest round message, and this phone's own TAP BATTLE while a round is on.
+// The latest round message, and this phone's own MASH BATTLE while a round is on.
 let round = null;
 let battle = null; // see newBattle()
 let noteUntil = 0;
@@ -354,7 +354,7 @@ function handle(msg) {
   }
 }
 
-// ---------- Rounds: TAP BATTLE ----------
+// ---------- Rounds: MASH BATTLE ----------
 // The phone runs its own bar on its own clock, so a tap counts the moment it happens.
 // Nothing gets lost on the way to the server:
 //   - the bar is saved in this tab's storage on every tap, so a reload (or a crashed
@@ -657,7 +657,7 @@ setInterval(() => {
   if ((!battle && now < noteUntil + 200) || snakeClock) renderRound();
 }, 250);
 
-// ---------- Rounds: SNAKE BATTLE ----------
+// ---------- Rounds: SNAKE ROYALE ----------
 // The laptop runs the board and the big screen shows it. This phone sends turns straight
 // away and never resends them: a turn that arrives late would steer somewhere unwanted.
 const SWIPE_PX = 22; // finger travel that counts as a turn
@@ -744,14 +744,14 @@ function renderSnake(now) {
       noteText = "WAIT FOR THE NEXT ROUND.";
     }
   } else if (r.phase === "countdown" || r.phase === "playing") {
-    statusText = "SNAKE BATTLE IN PROGRESS";
+    statusText = "SNAKE ROYALE IN PROGRESS";
     noteText = "YOU'RE IN THE NEXT ONE. WATCH THE BIG SCREEN.";
   } else if (mine) {
     statusText = `${mine.alive ? "STILL ALIVE" : `OUT AT ${clockText(mine.outAtMs)}`} · LENGTH ${mine.length} · ${mine.rank} OF ${mine.of}`;
     noteText = "THE BIG SCREEN STARTS THE NEXT ONE.";
     center = String(mine.length);
   } else {
-    statusText = "NEXT: SNAKE BATTLE";
+    statusText = "NEXT: SNAKE ROYALE";
     const who = r.host ? `YOU'RE THE HOST · ${players}.` : r.phase === "lobby" ? `LOBBY · ${players}.` : `${players}.`;
     noteText = `${who} ${waitForHost} ${SNAKE_RULE}`;
   }

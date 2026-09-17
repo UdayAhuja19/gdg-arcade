@@ -1,4 +1,4 @@
-// A SNAKE BATTLE round (lobby -> countdown -> playing -> results), driven with a fake clock.
+// A SNAKE ROYALE round (lobby -> countdown -> playing -> results), driven with a fake clock.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSnakeRound, SNAKE_TIMING } from "../server/party/snake-round.js";

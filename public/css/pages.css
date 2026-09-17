@@ -153,12 +153,41 @@
   padding-top: var(--space-6);
 }
 
+/* Tilting doesn't change a pill's layout box, so the row pads for the corners that swing
+   out; otherwise they land on the copy underneath. */
 .home-foot__pills {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-5);
+  gap: var(--space-7) var(--space-6);
   align-items: center;
+  padding-block: var(--space-6) var(--space-7);
 }
+
+/* Hover: the sticker lifts off the page, straightens a little and sits on top */
+.home-foot__pills .pill {
+  position: relative;
+  cursor: default;
+  transition:
+    translate var(--dur) var(--ease-spring),
+    scale var(--dur) var(--ease-spring),
+    rotate var(--dur) var(--ease-spring),
+    box-shadow var(--dur) var(--ease-spring);
+}
+
+.home-foot__pills .pill:hover {
+  z-index: 1;
+  translate: 0 -8px;
+  scale: 1.08;
+  box-shadow: 0 14px 0 var(--ink);
+}
+
+.home-foot__pills .pill.tilt-3:hover { rotate: -2deg; }
+.home-foot__pills .pill.tilt-2:hover { rotate: 4deg; }
+.home-foot__pills .pill.tilt-5:hover { rotate: -3deg; }
+
+.home-foot__pills .pill:nth-child(1):hover { background: var(--yellow); }
+.home-foot__pills .pill:nth-child(2):hover { background: var(--blue); }
+.home-foot__pills .pill:nth-child(3):hover { background: var(--green); }
 
 .home-foot > svg {
   position: absolute;

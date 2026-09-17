@@ -1,4 +1,4 @@
-// TAP BATTLE's bar: taps fill it, it drains, and fast drain only kicks in after a pause.
+// MASH BATTLE's bar: taps fill it, it drains, and fast drain only kicks in after a pause.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {

@@ -1,4 +1,4 @@
-// TAP BATTLE, the stand-in party game: every tap fills your bar, the bar always drains
+// MASH BATTLE, the stand-in party game: every tap fills your bar, the bar always drains
 // a little, and it drains fast when you stop tapping. First to fill it wins; if nobody
 // does before time's up, the fullest bar wins.
 // Phones run the bar (so a tap counts the moment it happens); the server uses the same

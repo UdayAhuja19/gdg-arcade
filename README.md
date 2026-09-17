@@ -97,14 +97,14 @@ After that, every push to `main` runs the tests and republishes the demo automat
 
 **Walk-away reset:** after 45 seconds with no input on the home page or a game-over screen, the arcade clears the name and goes back to the name box, so the next student doesn't play under someone else's name. The **NEXT PLAYER** button does the same thing straight away.
 
-## Party mode: TAP BATTLE and SNAKE BATTLE (4-player games, in progress)
+## Party mode: MASH BATTLE and SNAKE ROYALE (4-player games, in progress)
 
 Up to 4 students join on their phones by scanning a QR code on the big screen, and battle each other. **NEXT GAME** (bottom right of the big screen) picks the game:
 
-- **TAP BATTLE:** every tap fills your bar, and it drains when you stop. First to fill it wins.
-- **SNAKE BATTLE:** phones become trackpads (slide a finger to steer), and everyone watches one board on the big screen. Eat to grow. Crash into a wall, yourself or another snake and you're out, and your body turns into food. The last snake left wins.
+- **MASH BATTLE:** every tap fills your bar, and it drains when you stop. First to fill it wins.
+- **SNAKE ROYALE:** phones become trackpads (slide a finger to steer), and everyone watches one board on the big screen. Eat to grow. Crash into a wall, yourself or another snake and you're out, and your body turns into food. The last snake left wins.
 
-A round can start with fewer than 4 phones, from the big screen's **START** or from the first phone that joined. While people play, the screen also checks the connection: each phone gets a card with a moving dot, its ping and a verdict. In TAP BATTLE each phone keeps its own bar and resends it until the laptop confirms it, so a reload or a dropped connection doesn't lose anyone's result. In SNAKE BATTLE the laptop runs the board, so the big screen never lags.
+A round can start with fewer than 4 phones, from the big screen's **START** or from the first phone that joined. While people play, the screen also checks the connection: each phone gets a card with a moving dot, its ping and a verdict. In MASH BATTLE each phone keeps its own bar and resends it until the laptop confirms it, so a reload or a dropped connection doesn't lose anyone's result. In SNAKE ROYALE the laptop runs the board, so the big screen never lags.
 
 Install the free Cloudflare tunnel once (no account needed):
 

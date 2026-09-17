@@ -26,7 +26,7 @@ const DEAD_AFTER_MS = 10_000;
 // A phone that connects but never joins gets dropped after this long.
 const JOIN_TIMEOUT_MS = 60_000;
 const SNAPSHOT_EVERY_MS = 250;
-// How often a SNAKE BATTLE board is checked for a due step (steps are 100-143ms apart).
+// How often a SNAKE ROYALE board is checked for a due step (steps are 100-143ms apart).
 const GAME_EVERY_MS = 10;
 const GAMES = new Set(["tap", "snake"]);
 const MAX_MESSAGE_BYTES = 512;
@@ -194,7 +194,7 @@ export function createPartyServer({
     }
   }
 
-  // SNAKE BATTLE runs on the server: step the board when it's due, show it on the big
+  // SNAKE ROYALE runs on the server: step the board when it's due, show it on the big
   // screen, and tell phones when something happened to them.
   function runSnake() {
     const snake = rounds.snake;
@@ -335,7 +335,7 @@ export function createPartyServer({
         return;
       }
       case "progress": {
-        // A phone's TAP BATTLE bar, about 10 times a second during a round (and again
+        // A phone's MASH BATTLE bar, about 10 times a second during a round (and again
         // after a dropout, until the server has confirmed its final bar).
         if (rounds.tap.tick(now)) roundToPhones();
         const before = rounds.tap.entry(clientId);
@@ -356,7 +356,7 @@ export function createPartyServer({
         return;
       }
       case "turn": {
-        // SNAKE BATTLE steering. No reply: a turn that's late is better lost than resent.
+        // SNAKE ROYALE steering. No reply: a turn that's late is better lost than resent.
         rounds.snake.turn(clientId, msg, now);
         return;
       }
@@ -518,7 +518,7 @@ export function createPartyServer({
         current().toLobby();
         game = msg.game;
       } else if (msg?.t === "end") {
-        // END ROUND: a SNAKE BATTLE has no time limit, so the booth can stop one.
+        // END ROUND: a SNAKE ROYALE has no time limit, so the booth can stop one.
         if (game !== "snake" || !rounds.snake.end(clock())) return;
       } else {
         return;

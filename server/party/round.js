@@ -1,6 +1,6 @@
 // One round of the party game: lobby -> countdown -> playing -> results.
 //
-// The game is TAP BATTLE (public/js/shared/tap-battle.js): each phone runs its own bar
+// The game is MASH BATTLE (public/js/shared/tap-battle.js): each phone runs its own bar
 // and reports it about 10 times a second. The server opens and closes the round, keeps
 // the reported numbers believable, and decides who won:
 //   - phones that filled their bar rank first, fastest first (by their own clock, so a

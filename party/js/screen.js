@@ -1,6 +1,8 @@
-// The big screen for the party connection test: the QR code, one card per phone
-// with its live dot and connection numbers, and an overall verdict. Rounds of TAP BATTLE
-// or SNAKE BATTLE play over the cards.
+// The big screen for the party. The lobby is built for the people watching: the next game's
+// name, a big QR code, a preview of the game playing itself and a seat per player. STATS
+// swaps in the connection numbers for each phone. Rounds of MASH BATTLE or SNAKE ROYALE play
+// over the lobby.
+import { createLobbyDemo } from "./lobby-demo.js";
 import { createSnakeBoard } from "./snake-board.js";
 
 const $ = (id) => document.getElementById(id);
@@ -10,6 +12,7 @@ const emptyTpl = $("empty-tpl");
 
 // Each slot's brand shape peeks from behind its card.
 const SHAPES = { red: "circle", blue: "flower", yellow: "blob", green: "triangle" };
+const SLOT_COLORS = ["red", "blue", "yellow", "green"];
 const NETWORK_LABEL = { wifi: "WI-FI", cellular: "MOBILE DATA", unknown: "NETWORK ?" };
 const SPARK_MAX_MS = 500;
 const RECONNECT_MS = 1000;
@@ -64,6 +67,7 @@ function field(el, name, value) {
 
 function emptyCard(slot) {
   const el = emptyTpl.content.firstElementChild.cloneNode(true);
+  el.dataset.color = SLOT_COLORS[slot];
   el.querySelector(".player__badge").textContent = slot + 1;
   field(el, "n", slot + 1);
   return el;
@@ -137,11 +141,11 @@ function renderPlayers(players) {
   connectedSlots = players.map((p) => Boolean(p?.connected));
   const open = players.filter((p) => p === null).length;
   $("slots-left").textContent =
-    open === 0 ? "PARTY FULL" : `${open} ${open === 1 ? "SPOT" : "SPOTS"} OPEN`;
+    open === 0 ? "PARTY FULL · NEXT ROUND SOON" : `${open} ${open === 1 ? "SEAT" : "SEATS"} OPEN`;
 }
 
 // ---------- Rounds ----------
-const GAME_NAMES = { tap: "TAP BATTLE", snake: "SNAKE BATTLE" };
+const GAME_NAMES = { tap: "MASH BATTLE", snake: "SNAKE ROYALE" };
 const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN" };
 
 function roundPillText(r) {
@@ -171,7 +175,7 @@ const clockText = (ms) => {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 };
 
-// Under the name on a SNAKE BATTLE result row.
+// Under the name on a SNAKE ROYALE result row.
 function snakeDetail(entry, aliveCount) {
   if (entry.alive) return aliveCount === 1 ? "LAST ONE STANDING" : "STILL ALIVE";
   return `OUT AT ${clockText(entry.outAtMs ?? 0)}`;
@@ -275,8 +279,50 @@ function setLane(slot, level, full) {
   col.classList.toggle("is-full", full);
 }
 
+// ---------- Lobby ----------
+const HERO = {
+  tap: { words: ["<MASH", "BATTLE>"], tag: "TAP AS FAST AS YOU CAN. FILL YOUR BAR FIRST. STOP AND IT DRAINS." },
+  snake: { words: ["<SNAKE", "ROYALE>"], tag: "STEER WITH YOUR PHONE. EAT TO GROW. LAST SNAKE STANDING WINS." },
+};
+const demo = createLobbyDemo($("demo"));
+const STATS_KEY = "gdg-party-stats";
+let statsOn = false;
+try {
+  statsOn = localStorage.getItem(STATS_KEY) === "1";
+} catch {
+  // No storage (private window): stats start hidden.
+}
+
+function showGame(game) {
+  const hero = HERO[game];
+  if (!hero || document.body.dataset.game === game) return;
+  $("hero-word-1").textContent = hero.words[0];
+  $("hero-word-2").textContent = hero.words[1];
+  $("hero-tag").textContent = hero.tag;
+  document.body.dataset.game = game;
+  demo.setGame(game);
+}
+
+function setStats(on) {
+  statsOn = on;
+  document.body.classList.toggle("show-stats", on);
+  $("stats").setAttribute("aria-pressed", String(on));
+  try {
+    localStorage.setItem(STATS_KEY, on ? "1" : "0");
+  } catch {
+    // Not remembered; it still works for this visit.
+  }
+  syncDemo();
+}
+
+// The preview only runs while the lobby is what people see.
+function syncDemo() {
+  demo.setActive($("overlay").hidden && !statsOn);
+}
+
 function renderRound(r) {
   const running = r.phase === "countdown" || r.phase === "playing";
+  showGame(r.game);
   const pill = $("round-pill");
   if (performance.now() > noticeUntil) {
     const text = roundPillText(r);
@@ -298,6 +344,7 @@ function renderRound(r) {
 
   if (r.game === "snake") {
     renderSnake(r);
+    syncDemo();
     return;
   }
   $("snake").hidden = true;
@@ -320,13 +367,14 @@ function renderRound(r) {
   if (running) {
     buildLanes(r);
     for (const b of r.bars) setLane(b.slot, b.level, b.finishMs !== null);
-    $("battle-round").textContent = `ROUND ${r.number} · TAP BATTLE`;
+    $("battle-round").textContent = `ROUND ${r.number} · MASH BATTLE`;
     const timer = r.endsInMs > 0 ? String(Math.ceil(r.endsInMs / 1000)) : "TIME!";
     if ($("battle-timer").textContent !== timer) $("battle-timer").textContent = timer;
     $("battle-winner").hidden = !r.winner;
     if (r.winner) $("battle-winner").textContent = `${r.winner} FILLED IT!`;
   }
   showResultsCard(r, showResults);
+  syncDemo();
 }
 
 function showResultsCard(r, show) {
@@ -337,7 +385,7 @@ function showResultsCard(r, show) {
   }
 }
 
-// ---------- Rounds: SNAKE BATTLE ----------
+// ---------- Rounds: SNAKE ROYALE ----------
 const board = createSnakeBoard($("snake-board"));
 const legendRows = new Map(); // slot -> row
 
@@ -394,7 +442,7 @@ function renderSnake(r) {
   if (!running) return;
   if (wasHidden) board.refit();
 
-  $("snake-round").textContent = `ROUND ${r.number} · SNAKE BATTLE`;
+  $("snake-round").textContent = `ROUND ${r.number} · SNAKE ROYALE`;
   const alive = `${r.alive} ALIVE`;
   if ($("snake-alive").textContent !== alive) $("snake-alive").textContent = alive;
   $("snake-end").disabled = r.phase !== "playing" || r.over;
@@ -481,6 +529,7 @@ function connect() {
     $("slots-left").textContent = "";
     renderVerdict({ level: "bad", text: "PARTY SERVER OFFLINE" });
     $("overlay").hidden = true;
+    syncDemo();
     $("start").disabled = true;
     for (const btn of document.querySelectorAll(".game-switch [data-game]")) btn.disabled = true;
     for (const card of cards) card?.el.classList.add("is-down");
@@ -506,5 +555,9 @@ $("clear").addEventListener("click", () => {
   if (confirm("Remove every phone from the party?")) send({ t: "clear" });
 });
 
+$("stats").addEventListener("click", () => setStats(!statsOn));
+
 renderPlayers(new Array(maxPlayers).fill(null));
+showGame("tap");
+setStats(statsOn);
 connect();

@@ -1,4 +1,4 @@
-// SNAKE BATTLE's board rules: moving, turning, crashing, eating and food.
+// SNAKE ROYALE's board rules: moving, turning, crashing, eating and food.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {

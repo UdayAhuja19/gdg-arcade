@@ -1,6 +1,6 @@
-// One round of SNAKE BATTLE: lobby -> countdown -> playing -> results.
+// One round of SNAKE ROYALE: lobby -> countdown -> playing -> results.
 //
-// Unlike TAP BATTLE, the laptop runs the game: phones only send turns, and the board
+// Unlike MASH BATTLE, the laptop runs the game: phones only send turns, and the board
 // (public/js/shared/snake-battle.js) steps on the server's clock. A dead snake is out
 // for the rest of the round. The round ends when one snake is left (or, playing alone,
 // when yours dies), shows the final board for a moment, then the results:

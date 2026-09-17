@@ -1,4 +1,4 @@
-// SNAKE BATTLE, the second party game: up to 4 snakes on one board. Eat food to grow.
+// SNAKE ROYALE, the second party game: up to 4 snakes on one board. Eat food to grow.
 // Run your head into a wall, yourself or another snake and you're out, and your body
 // turns into food. The last snake left wins.
 // The laptop runs the board (server/party/snake-round.js) and draws it on the big
