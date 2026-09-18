@@ -27,8 +27,8 @@ export const DIRECTIONS = {
   right: { x: 1, y: 0 },
 };
 
-// Where each slot starts, by colour: red, blue, yellow, green.
-export const SPAWN_NAMES = ["TOP LEFT", "TOP RIGHT", "BOTTOM RIGHT", "BOTTOM LEFT"];
+// Where each slot starts, by colour: red, blue, yellow, green, black.
+export const SPAWN_NAMES = ["TOP LEFT", "TOP RIGHT", "BOTTOM RIGHT", "BOTTOM LEFT", "TOP MIDDLE"];
 
 export function stepsPerSec(playedMs) {
   const ups = Math.floor(Math.max(0, playedMs) / SPEED_UP_EVERY_MS);
@@ -52,6 +52,11 @@ export function spawn(slot, cols = COLS, rows = ROWS) {
       return { dir: "left", body: cells((i) => ({ x: cols - 1 - m - i, y: rows - 1 - m })) };
     case 3:
       return { dir: "up", body: cells((i) => ({ x: m, y: rows - 1 - m - i })) };
+    // The fifth snake starts at the top middle heading down, level with blue. Of the spots
+    // tried with bots (the middle heading right or up, the middle of the left edge), this one
+    // kept every snake's early crashes lowest and left the corners' chances unchanged.
+    case 4:
+      return { dir: "down", body: cells((i) => ({ x: Math.floor(cols / 2), y: m + i })) };
     default:
       throw new Error(`no spawn for slot ${slot}`);
   }

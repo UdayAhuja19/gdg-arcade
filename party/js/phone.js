@@ -4,6 +4,8 @@
 // In rounds it plays MASH BATTLE (its own bar) or steers in SNAKE ROYALE (the laptop runs
 // the board; this phone only sends turns).
 import { normalizeName } from "../../js/shared/names.js";
+import { LEGS, fmt, signed } from "../../js/shared/split-second.js";
+import { legText as lightsLegText, fmt as fmtReaction } from "../../js/shared/lights-out.js";
 import { BAR_FULL, createBar } from "../../js/shared/tap-battle.js";
 
 // Name and network are remembered on this phone. The player id is per tab, so two tabs
@@ -31,8 +33,12 @@ const nameError = $("name-error");
 const joinBtn = $("join-btn");
 const tapBtn = $("tap");
 const pad = $("pad");
+const splitZone = $("split-zone");
+const lightsPad = $("lights-pad");
+const splitBtn = $("split-btn");
+const splitLock = $("split-lock");
 
-const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN" };
+const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN", black: "BLACK" };
 
 function readStore() {
   try {
@@ -93,6 +99,12 @@ let taps = 0;
 let round = null;
 let battle = null; // see newBattle()
 let noteUntil = 0;
+
+// A message in the round note for a few seconds, over whatever the round says.
+function notice(message) {
+  $("round-note").textContent = message;
+  noteUntil = performance.now() + 4000;
+}
 
 // ---------- Views ----------
 function show(view) {
@@ -297,6 +309,7 @@ function handle(msg) {
       taps = msg.taps;
       renderRound();
       setConn("CONNECTED", "up");
+      syncClock();
       setNetworkRadios();
       show("play");
       if (document.hidden) {
@@ -327,8 +340,10 @@ function handle(msg) {
       onAck(msg);
       break;
     case "notice":
-      $("round-note").textContent = msg.message;
-      noteUntil = performance.now() + 4000;
+      notice(msg.message);
+      break;
+    case "sync":
+      onSync(msg);
       break;
     case "error":
       goOffline();
@@ -338,7 +353,7 @@ function handle(msg) {
     case "full":
       goOffline();
       forget();
-      showMessage("FULL", "4 PHONES ARE ALREADY IN THE PARTY. WAIT FOR A SPOT, THEN TRY AGAIN.", "TRY AGAIN", startJoin);
+      showMessage("FULL", "5 PHONES ARE ALREADY IN THE PARTY. WAIT FOR A SPOT, THEN TRY AGAIN.", "TRY AGAIN", startJoin);
       break;
     case "kicked":
       goOffline();
@@ -367,7 +382,7 @@ const PROGRESS_EVERY_MS = 100;
 const RESEND_FINAL_MS = 1000;
 // Only say "SENDING…" once the server has been quiet about our reports for this long.
 const UNCONFIRMED_MS = 800;
-const RULE = "TAP TO FILL YOUR BAR. STOP AND IT DRAINS. FIRST TO FILL IT WINS.";
+const RULE = "USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS. FIRST TO FILL IT WINS.";
 let frame = 0;
 
 function newBattle(msg, now) {
@@ -435,8 +450,10 @@ function onRound(msg) {
   round = msg;
   roundAt = now;
   const running = msg.phase === "countdown" || msg.phase === "playing";
-  const tapBattle = msg.game !== "snake";
-  if (!tapBattle) onSnakeRound(before, msg, now);
+  const tapBattle = msg.game === "tap";
+  if (msg.game === "snake") onSnakeRound(before, msg, now);
+  if (msg.game === "split") onSplitRound(msg, now);
+  if (msg.game === "lights") onLightsRound(msg, now);
   // A bar from an older round (or a restarted server, or another game) can't count any more.
   if (battle && (!tapBattle || battle.number !== msg.number || !msg.inRound)) dropBattle();
   if (tapBattle && running && msg.inRound && !battle) {
@@ -460,6 +477,8 @@ function onRound(msg) {
 }
 
 function onAck(msg) {
+  if (split && msg.round === split.number) onSplitAck(msg);
+  if (lights && msg.round === lights.number) onLightsAck(msg);
   if (!battle || msg.round !== battle.number) return;
   battle.ackedSeq = Math.max(battle.ackedSeq, msg.seq);
   battle.ackedAt = performance.now();
@@ -548,16 +567,25 @@ function setBar(level) {
 function renderRound() {
   const now = performance.now();
   setInGame();
-  const snake = round?.game === "snake";
-  tapBtn.hidden = snake;
-  pad.hidden = !snake;
-  if (snake) {
+  const game = round?.game ?? "tap";
+  tapBtn.hidden = game !== "tap";
+  pad.hidden = game !== "snake";
+  splitZone.hidden = game !== "split";
+  lightsPad.hidden = game !== "lights";
+  if (game === "snake") {
     renderSnake(now);
+    return;
+  }
+  if (game === "split") {
+    renderSplit(now);
+    return;
+  }
+  if (game === "lights") {
+    renderLights(now);
     return;
   }
   const status = $("round-status");
   const note = $("round-note");
-  const startBtn = $("start-btn");
   const result = $("result");
   const label = $("tap-label");
   const count = $("tap-count");
@@ -575,8 +603,6 @@ function renderRound() {
 
   if (round) {
     const players = `${round.players} ${round.players === 1 ? "PLAYER" : "PLAYERS"} IN`;
-    startBtn.hidden = !(round.host && round.phase === "lobby");
-    startBtn.disabled = round.players < round.minPlayers;
 
     const mine = round.phase === "results" ? round.result : null;
     result.hidden = !mine;
@@ -597,7 +623,7 @@ function renderRound() {
         labelText = String(Math.ceil((battle.startAt - now) / 1000));
       } else if (state === "playing") {
         statusText = someoneElse ? `${round.winner} FILLED IT!` : `${Math.ceil((battle.endAt - now) / 1000)}S LEFT`;
-        noteText = "KEEP TAPPING. STOP AND IT DRAINS.";
+        noteText = "FASTER! THE FULLER IT GETS, THE FASTER IT DRAINS.";
         labelText = now - battle.startAt < GO_SHOWN_MS ? "GO!" : "TAP!";
       } else if (state === "full") {
         statusText = `FULL IN ${(battle.bar.filledMs / 1000).toFixed(1)}S!`;
@@ -624,15 +650,9 @@ function renderRound() {
           ? `FULL IN ${(mine.finishMs / 1000).toFixed(1)}S · ${mine.rank} OF ${mine.of}`
           : `BAR ${mine.level}% · ${mine.rank} OF ${mine.of}`;
       noteText = "THE BIG SCREEN STARTS THE NEXT ONE.";
-    } else if (round.host) {
-      statusText = `YOU'RE THE HOST · ${players}`;
-      noteText =
-        round.players < round.minPlayers
-          ? `WAITING FOR ${round.minPlayers - round.players} MORE TO JOIN.`
-          : `START WHEN EVERYONE'S IN. ${RULE}`;
     } else {
       statusText = `LOBBY · ${players}`;
-      noteText = `WAITING FOR ${round.hostName} TO START. ${RULE}`;
+      noteText = `THE BIG SCREEN STARTS THE ROUND. ${RULE}`;
     }
   }
 
@@ -654,8 +674,420 @@ function renderRound() {
 setInterval(() => {
   const now = performance.now();
   const snakeClock = round?.game === "snake" && (round.phase === "countdown" || now - playingSince < GO_SHOWN_MS + 250);
-  if ((!battle && now < noteUntil + 200) || snakeClock) renderRound();
+  const splitClock =
+    (round?.game === "split" || round?.game === "lights") && (round.phase === "countdown" || round.phase === "playing");
+  if ((!battle && now < noteUntil + 200) || snakeClock || splitClock) renderRound();
 }, 250);
+
+// ---------- Clock sync ----------
+// LIGHTS OUT turns every screen's lights off at the same moment, so this phone needs to know how
+// far its clock is from the server's. It sends its own time, the server answers with its own;
+// the answer from the quickest round trip is the most accurate.
+let clockOffset = null; // server time minus this phone's performance.now(), or null
+let bestSyncRtt = Infinity;
+
+function syncClock(samples = 5) {
+  bestSyncRtt = Infinity;
+  for (let i = 0; i < samples; i += 1) setTimeout(() => sendMsg({ t: "sync", c: performance.now() }), i * 120);
+}
+
+function onSync(msg) {
+  const now = performance.now();
+  const rtt = now - msg.c;
+  if (rtt < 0 || rtt > bestSyncRtt) return;
+  bestSyncRtt = rtt;
+  clockOffset = msg.s + rtt / 2 - now;
+}
+
+// A server time on this phone's clock. Before any sync, the message's own send time stands in.
+const toLocal = (serverTime) => serverTime - (clockOffset ?? 0);
+
+// ---------- Rounds: LIGHTS OUT ----------
+// Five lights come on a second apart, then all go out after a random hold: tap as fast as you
+// can. The server sends the schedule ahead; this phone turns its lights off at that moment on its
+// own clock, and times the reaction from the frame the lights actually went off.
+const LIGHTS_RULE = "FIVE RED LIGHTS COME ON. WHEN THEY ALL GO OUT, TAP. TAP EARLY AND IT'S A JUMP START.";
+const RESEND_TAP_MS = 500;
+let lights = null; // { number, leg, lightTimes, outAt (local), outPaintedAt, pressed, result, seq, sentAt, acked, msg }
+let lightsFrame = 0;
+
+function onLightsRound(msg, now) {
+  const live = msg.phase === "playing" && (msg.stage === "grid" || msg.stage === "go") && msg.inRound;
+  if (lights && (lights.number !== msg.number || lights.leg !== msg.leg)) lights = null;
+  if (!live) {
+    if (lights && msg.stage === "reveal") lights.done = true;
+    return;
+  }
+  if (clockOffset === null) clockOffset = msg.serverNow - now; // until a sync answers
+  if (!lights) {
+    lights = { number: msg.number, leg: msg.leg, lightTimes: [], outAt: 0, outPaintedAt: null, pressed: msg.pressed, result: null, seq: 0, sentAt: 0, acked: msg.pressed, msg: null };
+    if (msg.stage === "grid") syncClock();
+  }
+  lights.serverLights = msg.lightTimes;
+  lights.serverOut = msg.outAt;
+  if (!lightsFrame) lightsFrame = requestAnimationFrame(lightsTick);
+}
+
+// Every frame while a start is on: how many lights are lit, and the frame they went out.
+function lightsTick(frameAt) {
+  lightsFrame = 0;
+  if (!lights || lights.done) return;
+  const now = performance.now();
+  const on = lights.serverLights.filter((t) => toLocal(t) <= now).length;
+  const out = now >= toLocal(lights.serverOut);
+  if (out && lights.outPaintedAt === null) lights.outPaintedAt = now;
+  paintGantry(out ? 0 : on);
+  if (!lights.pressed || !lights.acked) lightsFrame = requestAnimationFrame(lightsTick);
+  if (lights.pressed && !lights.acked && now - lights.sentAt > RESEND_TAP_MS) sendTap();
+}
+
+function paintGantry(on) {
+  const bulbs = lightsPad.querySelectorAll(".gantry__light");
+  bulbs.forEach((bulb, i) => bulb.classList.toggle("is-on", i < on));
+}
+
+function sendTap() {
+  lights.sentAt = performance.now();
+  lights.seq += 1;
+  lights.sentSeq = lights.seq;
+  sendMsg({ t: "lights", round: lights.number, leg: lights.leg, seq: lights.seq, ...lights.msg });
+}
+
+function pressLights() {
+  const now = performance.now();
+  if (!lights || lights.pressed || lights.done) {
+    if (round && (round.phase === "lobby" || round.phase === "results")) {
+      sendMsg({ t: "tap" });
+      navigator.vibrate?.(12);
+    }
+    return;
+  }
+  if (!lights.serverLights || now < toLocal(lights.serverLights[0])) return; // nothing lit yet
+  lights.pressed = true;
+  // Normally the reaction runs from the frame the lights went off. If no frame has run since
+  // (a busy or throttled phone), the scheduled lights out stands in.
+  const outLocal = toLocal(lights.serverOut);
+  if (lights.outPaintedAt === null && now >= outLocal) lights.outPaintedAt = outLocal;
+  if (lights.outPaintedAt === null) {
+    lights.msg = { jump: true };
+    lights.result = { ms: null, jump: true };
+    navigator.vibrate?.([200, 60, 200]);
+  } else {
+    const ms = Math.round(now - lights.outPaintedAt);
+    lights.msg = { ms };
+    lights.result = { ms, jump: false };
+    navigator.vibrate?.(20);
+  }
+  sendTap();
+  if (!lightsFrame) lightsFrame = requestAnimationFrame(lightsTick);
+  renderRound();
+}
+
+function onLightsAck(msg) {
+  if (msg.seq !== lights.sentSeq) return;
+  lights.acked = true;
+  if (msg.status === "saved" || msg.status === "final") return;
+  // too-late / rejected: the server didn't take it; the reveal will say what counted.
+}
+
+function renderLights(now) {
+  const r = round;
+  $("bar").hidden = true;
+  $("sync").hidden = true;
+  const status = $("round-status");
+  const note = $("round-note");
+  const label = $("lights-label");
+  const result = $("result");
+  const legLine = `START ${r.leg + 1} OF ${r.legs ?? 3}`;
+  const since = now - roundAt;
+  const secs = (ms) => Math.max(0, Math.ceil((ms - since) / 1000));
+  const mine = r.phase === "results" ? r.result : null;
+  result.hidden = !mine;
+  if (mine) {
+    result.textContent = mine.rank === 1 ? (r.youWon ? "YOU WON!" : r.draw ? "DRAW!" : "GAME OVER") : `YOU'RE #${mine.rank}`;
+    result.dataset.rank = mine.rank;
+  }
+  let statusText;
+  let noteText = "";
+  let labelText = "TAP WHEN THE LIGHTS GO OUT";
+  let off = true;
+
+  if (r.phase === "countdown" && r.inRound) {
+    statusText = "GET READY";
+    noteText = LIGHTS_RULE;
+  } else if (r.phase === "playing" && r.inRound && (r.stage === "grid" || r.stage === "go")) {
+    statusText = legLine;
+    noteText = "WATCH THE LIGHTS. DON'T MOVE UNTIL THEY'RE ALL OUT.";
+    off = false;
+    const mineNow = lights?.result;
+    if (mineNow) {
+      labelText = mineNow.jump ? "JUMP START!" : fmtReaction(mineNow.ms);
+      noteText = mineNow.jump ? "YOU WENT BEFORE LIGHTS OUT. +1.000" : "WAIT FOR THE OTHERS…";
+    }
+  } else if (r.phase === "playing" && r.inRound && r.stage === "reveal") {
+    const leg = r.mine;
+    labelText = lightsLegText(leg);
+    statusText = `${legLine} · ${lightsLegText(leg)}`;
+    const place = r.standing ? ` · ${r.standing.rank} OF ${r.standing.of}` : "";
+    const next = r.leg + 1 >= (r.legs ?? 3) ? "RESULTS" : "NEXT START";
+    noteText = `TOTAL ${fmtReaction(r.total)}${place} · ${next} IN ${secs(r.revealInMs)}S`;
+  } else if (r.phase === "countdown" || r.phase === "playing") {
+    statusText = "LIGHTS OUT IN PROGRESS";
+    noteText = "YOU'RE IN THE NEXT ONE. WATCH THE BIG SCREEN.";
+  } else if (mine) {
+    statusText = `TOTAL ${fmtReaction(mine.total)} · ${mine.rank} OF ${mine.of}`;
+    noteText = mine.legs.map((l) => lightsLegText(l)).join(" · ");
+    labelText = fmtReaction(mine.total);
+  } else {
+    statusText = "NEXT: LIGHTS OUT";
+    const players = `${r.players} ${r.players === 1 ? "PLAYER" : "PLAYERS"} IN`;
+    noteText = `${r.phase === "lobby" ? "LOBBY · " : ""}${players}. THE BIG SCREEN STARTS THE ROUND. ${LIGHTS_RULE}`;
+  }
+  if (off) paintGantry(0);
+  if (status.textContent !== statusText) status.textContent = statusText;
+  if (now > noteUntil && note.textContent !== noteText) note.textContent = noteText;
+  if (label.textContent !== labelText) label.textContent = labelText;
+}
+
+lightsPad.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  pressLights();
+});
+lightsPad.addEventListener("keydown", (event) => {
+  if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+    event.preventDefault();
+    pressLights();
+  }
+});
+
+// ---------- Rounds: SPLIT SECOND ----------
+// Three rounds, each with a target. In each round's window this phone starts and stops its own
+// clock as often as the player likes, showing no numbers, then locks the last run in. The clock
+// is this phone's (a press counts the moment it happens); the laptop only checks it. Start and
+// stop are sent once; a lock is resent until the laptop confirms it.
+const SPLIT_KEY = "gdg-party-split";
+const SPLIT_RULE = "START THE CLOCK, STOP IT WHEN YOU THINK IT'S TIME. NO NUMBERS: COUNT IT IN YOUR HEAD.";
+let split = null; // { number, leg, runStartAt, runStartEpoch, runs, stopped, locked, seq, lockSeq, lockSentAt, delivered }
+
+function newSplit(msg) {
+  return { number: msg.number, leg: msg.leg, runStartAt: null, runStartEpoch: null, runs: 0, stopped: false, locked: false, seq: 0, lockSeq: 0, lockSentAt: 0, delivered: false };
+}
+
+function saveSplit() {
+  if (!split) return sessionSet(SPLIT_KEY, null);
+  const { runStartAt, ...kept } = split;
+  sessionSet(SPLIT_KEY, JSON.stringify({ clientId, ...kept }));
+}
+
+// After a reload: a run that was going keeps going, from the same moment.
+function loadSplit() {
+  try {
+    const saved = JSON.parse(sessionGet(SPLIT_KEY));
+    if (!saved || saved.clientId !== clientId) return null;
+    const { clientId: _, ...kept } = saved;
+    const runStartAt = kept.runStartEpoch === null ? null : performance.now() - (Date.now() - kept.runStartEpoch);
+    return { ...kept, runStartAt };
+  } catch {
+    return null;
+  }
+}
+
+function sendSplit(event, ms) {
+  split.seq += 1;
+  sendMsg({ t: "split", round: split.number, leg: split.leg, seq: split.seq, event, ms });
+  return split.seq;
+}
+
+function onSplitRound(msg, now) {
+  const inWindow = msg.phase === "playing" && msg.stage === "run" && msg.inRound;
+  // A new round, a new leg or another game: start clean.
+  if (split && (split.number !== msg.number || split.leg !== msg.leg || !msg.inRound)) split = null;
+  if (!split && inWindow) split = newSplit(msg);
+  if (split && !inWindow && msg.stage !== "run") {
+    // The window closed: a run still going no longer counts.
+    split.runStartAt = null;
+    split.runStartEpoch = null;
+  }
+  if (split && msg.locked) {
+    split.locked = true;
+    split.delivered = true;
+  }
+  saveSplit();
+  if (split?.locked && !split.delivered) resendLock(now);
+}
+
+function onSplitAck(msg) {
+  if (!split.lockSeq || msg.seq !== split.lockSeq) return;
+  if (msg.status === "saved" || msg.status === "final") {
+    split.delivered = true;
+  } else {
+    // The laptop had nothing to lock (the stop was lost): run it again.
+    split.locked = false;
+    split.lockSeq = 0;
+    split.stopped = false;
+    notice("THAT DIDN'T REACH THE SCREEN. RUN IT AGAIN, THEN LOCK IT IN.");
+  }
+  saveSplit();
+  renderRound();
+}
+
+function resendLock(now) {
+  if (!split || !split.locked || split.delivered || now - split.lockSentAt < RESEND_FINAL_MS) return;
+  split.lockSentAt = now;
+  split.lockSeq = sendSplit("lock");
+}
+
+function splitWindowOpen() {
+  return round?.game === "split" && round.phase === "playing" && round.stage === "run" && round.inRound && split && !split.locked;
+}
+
+function pressSplit() {
+  const now = performance.now();
+  if (!splitWindowOpen()) {
+    // Between rounds a press flashes this player's card on the big screen.
+    if (round && (round.phase === "lobby" || round.phase === "results")) {
+      sendMsg({ t: "tap" });
+      navigator.vibrate?.(12);
+    }
+    return;
+  }
+  if (split.runStartAt === null) {
+    split.runStartAt = now;
+    split.runStartEpoch = Date.now();
+    split.runs += 1;
+    sendSplit("start");
+    navigator.vibrate?.(10);
+  } else {
+    const ms = Math.round(now - split.runStartAt);
+    split.runStartAt = null;
+    split.runStartEpoch = null;
+    split.stopped = true;
+    sendSplit("stop", ms);
+    navigator.vibrate?.([10, 40, 10]);
+  }
+  saveSplit();
+  renderRound();
+}
+
+function lockSplit() {
+  if (!splitWindowOpen() || !split.stopped || split.runStartAt !== null) return;
+  split.locked = true;
+  split.lockSentAt = performance.now();
+  split.lockSeq = sendSplit("lock");
+  navigator.vibrate?.([60, 40, 160]);
+  saveSplit();
+  renderRound();
+}
+
+setInterval(() => resendLock(performance.now()), 500);
+
+function renderSplit(now) {
+  const r = round;
+  $("bar").hidden = true;
+  $("sync").hidden = true;
+  const status = $("round-status");
+  const note = $("round-note");
+  const label = $("split-label");
+  const runsEl = $("split-runs");
+  const result = $("result");
+  const legText = `ROUND ${r.leg + 1} OF ${r.legs ?? LEGS}`;
+  const since = now - roundAt;
+  const secs = (ms) => Math.max(0, Math.ceil((ms - since) / 1000));
+
+  let statusText;
+  let noteText = "";
+  let labelText = "–";
+  let runsText = "";
+  let waiting = true;
+  let canLock = false;
+  const mine = r.phase === "results" ? r.result : null;
+  result.hidden = !mine;
+  if (mine) {
+    result.textContent = mine.rank === 1 ? (r.youWon ? "YOU WON!" : r.draw ? "DRAW!" : "GAME OVER") : `YOU'RE #${mine.rank}`;
+    result.dataset.rank = mine.rank;
+  }
+
+  if (r.phase === "countdown" && r.inRound) {
+    statusText = `GET READY · ${legText}`;
+    noteText = SPLIT_RULE;
+    labelText = "READY";
+  } else if (r.phase === "playing" && r.inRound && r.stage === "set") {
+    // The target on its own first, then 3-2-1 into the window.
+    const left = secs(r.setInMs);
+    statusText = legText;
+    noteText = "COUNT IT IN YOUR HEAD. RETRY ALL YOU LIKE, THEN LOCK IT IN.";
+    labelText = left > 3 ? "READY" : String(Math.max(1, left));
+  } else if (r.phase === "playing" && r.inRound && r.stage === "run") {
+    statusText = legText;
+    const left = `${secs(r.endsInMs)}S LEFT`;
+    if (split?.locked) {
+      labelText = "LOCKED";
+      noteText = split.delivered ? `LOCKED IN · WAIT FOR THE OTHERS · ${left}` : "LOCKING IN…";
+    } else if (split?.runStartAt !== null && split?.runStartAt !== undefined) {
+      labelText = "STOP";
+      waiting = false;
+      noteText = `COUNTING… · ${left}`;
+    } else {
+      labelText = split?.runs ? "AGAIN" : "START";
+      waiting = false;
+      canLock = Boolean(split?.stopped);
+      noteText = split?.stopped ? `HAPPY WITH THAT ONE? LOCK IT IN, OR GO AGAIN · ${left}` : `PRESS START, THEN STOP AT ${fmt(r.targetMs)} · ${left}`;
+    }
+    runsText = split?.runs ? `RUN ${split.runs}` : "";
+  } else if (r.phase === "playing" && r.inRound && r.stage === "reveal") {
+    // Now, and only now, the player sees what they did.
+    const seen = r.reveal;
+    labelText = seen ? fmt(seen.ms) : "MISS";
+    statusText = seen ? `YOU GOT ${fmt(seen.ms)} · ${signed(seen.ms, r.targetMs)}` : "NO TIME LOCKED IN";
+    const next = r.leg + 1 >= (r.legs ?? LEGS) ? "RESULTS" : "NEXT ROUND";
+    noteText = `TOTAL ${fmt(r.total)} OFF · ${next} IN ${secs(r.revealInMs)}S`;
+  } else if (r.phase === "countdown" || r.phase === "playing") {
+    statusText = "SPLIT SECOND IN PROGRESS";
+    noteText = "YOU'RE IN THE NEXT ONE. WATCH THE BIG SCREEN.";
+  } else if (mine) {
+    statusText = `TOTAL ${fmt(mine.total)} OFF · ${mine.rank} OF ${mine.of}`;
+    noteText = "THE BIG SCREEN STARTS THE NEXT ONE.";
+    labelText = fmt(mine.total);
+  } else {
+    statusText = "NEXT: SPLIT SECOND";
+    const players = `${r.players} ${r.players === 1 ? "PLAYER" : "PLAYERS"} IN`;
+    noteText = `${r.phase === "lobby" ? "LOBBY · " : ""}${players}. THE BIG SCREEN STARTS THE ROUND. ${SPLIT_RULE}`;
+  }
+
+  // The target, big, whenever there's one to aim at.
+  const goal = $("split-goal");
+  const showGoal = Boolean(r.targetMs) && r.inRound && (r.phase === "countdown" || r.phase === "playing");
+  goal.hidden = !showGoal;
+  if (showGoal) {
+    const goalText = fmt(r.targetMs);
+    if ($("split-goal-time").textContent !== goalText) $("split-goal-time").textContent = goalText;
+  }
+  if (status.textContent !== statusText) status.textContent = statusText;
+  if (now > noteUntil && note.textContent !== noteText) note.textContent = noteText;
+  if (label.textContent !== labelText) label.textContent = labelText;
+  if (runsEl.textContent !== runsText) runsEl.textContent = runsText;
+  runsEl.hidden = !runsText;
+  splitBtn.classList.toggle("is-waiting", waiting);
+  splitBtn.classList.toggle("is-running", split?.runStartAt !== null && split?.runStartAt !== undefined && splitWindowOpen());
+  splitLock.disabled = !canLock;
+  splitLock.hidden = !(r.phase === "playing" && r.inRound && r.stage === "run");
+}
+
+splitBtn.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  pressSplit();
+  splitBtn.classList.add("is-pressed");
+});
+for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
+  splitBtn.addEventListener(type, () => splitBtn.classList.remove("is-pressed"));
+}
+splitBtn.addEventListener("keydown", (event) => {
+  if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+    event.preventDefault();
+    pressSplit();
+  }
+});
+splitLock.addEventListener("click", lockSplit);
 
 // ---------- Rounds: SNAKE ROYALE ----------
 // The laptop runs the board and the big screen shows it. This phone sends turns straight
@@ -702,9 +1134,6 @@ function renderSnake(now) {
   const r = round;
   const players = `${r.players} ${r.players === 1 ? "PLAYER" : "PLAYERS"} IN`;
   const between = r.phase === "lobby" || r.phase === "results";
-  const startBtn = $("start-btn");
-  startBtn.hidden = !(r.host && r.phase === "lobby");
-  startBtn.disabled = r.players < r.minPlayers;
   $("bar").hidden = true;
   $("sync").hidden = true;
 
@@ -716,11 +1145,6 @@ function renderSnake(now) {
     result.dataset.rank = mine.rank;
   }
 
-  const waitForHost = r.host
-    ? r.players < r.minPlayers
-      ? `WAITING FOR ${r.minPlayers - r.players} MORE TO JOIN.`
-      : "START WHEN EVERYONE'S IN."
-    : `WAITING FOR ${r.hostName} TO START.`;
   let statusText;
   let noteText;
   let center = "–";
@@ -752,8 +1176,8 @@ function renderSnake(now) {
     center = String(mine.length);
   } else {
     statusText = "NEXT: SNAKE ROYALE";
-    const who = r.host ? `YOU'RE THE HOST · ${players}.` : r.phase === "lobby" ? `LOBBY · ${players}.` : `${players}.`;
-    noteText = `${who} ${waitForHost} ${SNAKE_RULE}`;
+    const who = r.phase === "lobby" ? `LOBBY · ${players}.` : `${players}.`;
+    noteText = `${who} THE BIG SCREEN STARTS THE ROUND. ${SNAKE_RULE}`;
   }
 
   const status = $("round-status");
@@ -855,7 +1279,6 @@ document.addEventListener("keydown", (event) => {
   if (round && (round.phase === "lobby" || round.phase === "results")) sendMsg({ t: "tap" });
 });
 
-$("start-btn").addEventListener("click", () => sendMsg({ t: "start" }));
 
 // ---------- Fake game updates ----------
 function startUpdates() {
@@ -1013,7 +1436,10 @@ document.addEventListener("visibilitychange", () => {
   if (joined) sendMsg({ t: "pause" });
 });
 // Leaving the page (reload, closing the tab): make sure the latest bar is saved.
-window.addEventListener("pagehide", saveBattle);
+window.addEventListener("pagehide", () => {
+  saveBattle();
+  saveSplit();
+});
 
 // Back from the back/forward cache: its connection was closed while it was stored.
 window.addEventListener("pageshow", (event) => {
@@ -1029,6 +1455,7 @@ document.addEventListener("dblclick", (event) => event.preventDefault(), { passi
 // ---------- Start ----------
 // A battle this tab was in the middle of (the page reloaded): kept until the server says where things stand.
 battle = loadBattle();
+split = loadSplit();
 if (sessionGet(JOINED_KEY) === "1" && name) {
   startJoin();
 } else {

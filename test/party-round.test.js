@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRound, LATE_REPORT_MS, MIN_PLAYERS, TIMING } from "../server/party/round.js";
-import { MAX_FILL_PER_SEC, MAX_TAPS_PER_SEC, MIN_FILL_MS } from "../public/js/shared/tap-battle.js";
+import { MAX_TAPS_PER_SEC, MIN_FILL_MS, TAPS_TO_FILL, maxLevelAt } from "../public/js/shared/tap-battle.js";
 
 const { countdownMs, roundMs, graceMs, finishWindowMs } = TIMING;
 const GO = countdownMs; // rounds in these tests start at 0
@@ -16,7 +16,7 @@ function playing(n) {
   return round;
 }
 
-test("a round starts with fewer than 4 players, down to the minimum", () => {
+test("a round starts with fewer than 5 players, down to the minimum", () => {
   assert.equal(MIN_PLAYERS, 1);
   const round = createRound();
   assert.deepEqual(round.start([], 0), { error: "NEED AT LEAST 1 PLAYER TO START." });
@@ -85,22 +85,22 @@ test("reported bars are kept believable", () => {
 
   // Can't be fuller than the fastest possible tapping allows.
   const level = (lvl, at) => round.report("phone-0", { level: lvl }, at).entry.level;
-  assert.equal(level(90, GO + 1000), MAX_FILL_PER_SEC + 10);
+  assert.equal(level(90, GO + 1000), maxLevelAt(1000) + 10);
   assert.equal(level(-20, GO + 1100), 0);
   assert.equal(round.report("phone-0", { level: "lots" }, GO + 1200).status, "rejected");
   assert.equal(level(500, GO + 20_000), 100);
 
   // A claimed finish time can't be faster than possible, or far behind the server's clock.
   const early = playing(2);
-  early.report("phone-0", { level: 100, done: true, ms: 10 }, GO + 5000);
-  assert.equal(early.entry("phone-0").finishMs, Math.max(MIN_FILL_MS, 3000));
-  early.report("phone-1", { level: 100, done: true, ms: 9000 }, GO + 5000);
-  assert.equal(early.entry("phone-1").finishMs, 5000, "not later than the server saw it");
+  early.report("phone-0", { level: 100, done: true, ms: 10 }, GO + 7000);
+  assert.equal(early.entry("phone-0").finishMs, MIN_FILL_MS);
+  early.report("phone-1", { level: 100, done: true, ms: 9000 }, GO + 7000);
+  assert.equal(early.entry("phone-1").finishMs, 7000, "not later than the server saw it");
 
   // Once full, the bar is final.
-  assert.equal(early.report("phone-0", { level: 20 }, GO + 5100).status, "final");
+  assert.equal(early.report("phone-0", { level: 20 }, GO + 7100).status, "final");
   assert.equal(early.entry("phone-0").level, 100);
-  assert.equal(early.report("stranger", { level: 20 }, GO + 5100).status, "rejected", "only players in the round");
+  assert.equal(early.report("stranger", { level: 20 }, GO + 7100).status, "rejected", "only players in the round");
 });
 
 test("a full bar that beat the tap-speed cap isn't frozen below full: it counts once the cap catches up", () => {
@@ -112,12 +112,12 @@ test("a full bar that beat the tap-speed cap isn't frozen below full: it counts 
   assert.ok(held.level < 100);
   assert.equal(held.final, false, "not locked in at the capped level");
   assert.equal(held.finishMs, null);
-  // The phone resends once a second; by 2s the cap allows a full bar.
-  assert.equal(round.report("phone-0", { ...full, seq: 2 }, GO + 1500).status, "capped");
-  assert.equal(round.report("phone-0", { ...full, seq: 3 }, GO + 2500).status, "saved");
+  // The phone resends once a second; after the fastest possible fill the cap allows a full bar.
+  assert.equal(round.report("phone-0", { ...full, seq: 2 }, GO + 3000).status, "capped");
+  assert.equal(round.report("phone-0", { ...full, seq: 3 }, GO + MIN_FILL_MS + 100).status, "saved");
   assert.equal(round.entry("phone-0").level, 100);
   assert.equal(round.entry("phone-0").finishMs, MIN_FILL_MS, "credited with the fastest possible time");
-  assert.equal(round.report("phone-0", { ...full, seq: 4 }, GO + 2600).status, "final");
+  assert.equal(round.report("phone-0", { ...full, seq: 4 }, GO + MIN_FILL_MS + 200).status, "final");
 });
 
 test("a bar marked final can't change, and reports for another round are too late", () => {
@@ -138,7 +138,7 @@ test("a phone that was offline when the round closed still gets its final bar in
   assert.deepEqual(round.snapshot(0).results.map((r) => r.name), ["P0", "P2", "P1"]);
 
   // P1 filled its bar at 8.5s on its own clock while offline; it reconnects after the results.
-  const late = round.report("phone-1", { round: 1, level: 100, done: true, ms: 8500, taps: 72, final: true }, t + 5000);
+  const late = round.report("phone-1", { round: 1, level: 100, done: true, ms: 8500, taps: 200, final: true }, t + 5000);
   assert.equal(late.status, "saved");
   assert.equal(late.late, true);
   assert.deepEqual(
@@ -147,7 +147,7 @@ test("a phone that was offline when the round closed still gets its final bar in
   );
   assert.equal(round.viewFor("phone-1", 0).result.rank, 1);
   // Sending it again changes nothing.
-  const again = { round: 1, level: 100, done: true, ms: 8000, taps: 72, final: true };
+  const again = { round: 1, level: 100, done: true, ms: 8000, taps: 200, final: true };
   assert.equal(round.report("phone-1", again, t + 6000).status, "final");
 
   // P2's bar ended lower than the server last saw; its final level counts.
@@ -174,11 +174,11 @@ test("a late finish has to add up, and can't come in after the late window", () 
   const done = (id, ms, taps, at = GO + 10_000) =>
     round.report(id, { level: 100, done: true, ms, taps, final: true }, at).status;
   assert.equal(done("phone-1", 1000, 60), "rejected", "faster than anyone can tap");
-  assert.equal(done("phone-1", 6000, 20), "rejected", "too few taps to fill the bar");
+  assert.equal(done("phone-1", 6000, TAPS_TO_FILL - 1), "rejected", "too few taps to fill the bar");
   assert.equal(done("phone-1", 6000, 500), "rejected", "more taps than possible in that time");
   assert.equal(done("phone-1", roundMs + 1, 60), "rejected", "after the time limit");
   assert.equal(done("phone-2", 7000, 80, GO + 6000 + finishWindowMs + LATE_REPORT_MS + 1), "too-late");
-  assert.equal(done("phone-3", 7000, 80), "saved");
+  assert.equal(done("phone-3", 7000, 180), "saved");
 });
 
 test("tap counts only go up and are capped", () => {

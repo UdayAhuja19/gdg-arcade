@@ -1,17 +1,26 @@
-// MASH BATTLE's bar: taps fill it, it drains, and fast drain only kicks in after a pause.
+// MASH BATTLE's bar: taps fill it, it leaks (faster the fuller it is), and fast drain kicks in after a pause.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   BAR_FULL,
   TAP_FILL,
-  DRAIN_PER_SEC,
   IDLE_AFTER_MS,
-  IDLE_DRAIN_PER_SEC,
   MIN_FILL_MS,
+  MAX_TAPS_PER_SEC,
+  ROUND_MS,
   createBar,
+  settleLevel,
 } from "../public/js/shared/tap-battle.js";
 
-const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≈ ${expected}`);
+const close = (actual, expected, within = 1e-9) => assert.ok(Math.abs(actual - expected) < within, `${actual} ≈ ${expected}`);
+
+// Taps at a steady speed for up to `ms` (never longer than a round), then returns the bar.
+function tapSteadily(tapsPerSec, ms = ROUND_MS) {
+  const bar = createBar(0);
+  const gap = 1000 / tapsPerSec;
+  for (let t = 0; t < ms && bar.filledMs === null; t += gap) bar.tap(t);
+  return bar;
+}
 
 test("each tap fills the bar, and taps before the start don't count", () => {
   const bar = createBar(1000);
@@ -21,43 +30,64 @@ test("each tap fills the bar, and taps before the start don't count", () => {
   assert.equal(bar.taps, 1);
 });
 
-test("the bar drains slowly while tapping and fast after a pause", () => {
-  const bar = createBar(0);
-  for (let i = 0; i < 25; i += 1) bar.tap(i * 100); // 25 taps over 2.4s
-  close(bar.level(2400), 25 * TAP_FILL - 2.4 * DRAIN_PER_SEC);
+test("the bar leaks while tapping, faster when fuller, and drains fast after a pause", () => {
+  const low = createBar(0, { level: 20, lastAt: 0, lastTapAt: 0 });
+  const high = createBar(0, { level: 80, lastAt: 0, lastTapAt: 0 });
+  const lostLow = 20 - low.level(300);
+  const lostHigh = 80 - high.level(300);
+  assert.ok(lostLow > 0 && lostHigh > lostLow, `lost ${lostLow} from 20%, ${lostHigh} from 80%`);
 
-  // A second after the last tap: slow drain for the whole second, fast drain after the pause.
-  const before = bar.level(2400);
-  close(bar.level(3400), before - 1 * DRAIN_PER_SEC - (1 - IDLE_AFTER_MS / 1000) * IDLE_DRAIN_PER_SEC);
-  assert.equal(bar.level(60_000), 0, "never below empty");
+  // A second without tapping loses much more once the idle pause has passed.
+  const idle = createBar(0, { level: 80, lastAt: 0, lastTapAt: 0 });
+  const before = idle.level(IDLE_AFTER_MS);
+  const lostAfterPause = before - idle.level(IDLE_AFTER_MS + 300);
+  assert.ok(lostAfterPause > lostHigh * 1.5, `lost ${lostAfterPause} in 300ms after the pause`);
+  assert.equal(idle.level(60_000), 0, "never below empty");
 });
 
-test("steady tapping fills the bar, then it stays full", () => {
-  const bar = createBar(0);
-  let t = 0;
-  while (bar.filledMs === null && t < 60_000) {
-    bar.tap(t);
-    t += 100; // 10 taps a second
+test("one finger or two thumbs can't fill it; only fast drumming can, and it takes a while", () => {
+  // One finger (about 8 taps a second) and two thumbs (about 14) stall below full.
+  for (const speed of [8, 14, 16]) {
+    const bar = tapSteadily(speed);
+    assert.equal(bar.filledMs, null, `${speed} taps/s filled it`);
+    close(bar.level(ROUND_MS), settleLevel(speed), 3);
   }
-  assert.equal(bar.level(t), BAR_FULL);
-  // 10 taps/s fills 20/s and drains 6/s: about 7 seconds.
-  assert.ok(bar.filledMs > 6500 && bar.filledMs < 7500, `filled in ${bar.filledMs}ms`);
-  assert.equal(bar.level(t + 10_000), BAR_FULL, "a full bar doesn't drain");
-  bar.tap(t + 10_100);
-  assert.equal(bar.taps, Math.round(bar.filledMs / 100) + 1, "taps after full don't count");
+  // Drumming with several fingers fills it, but has to be kept up for many seconds.
+  const fast = tapSteadily(20);
+  assert.ok(fast.filledMs > 10_000 && fast.filledMs < 14_000, `20 taps/s filled in ${fast.filledMs}ms`);
+  const faster = tapSteadily(24);
+  assert.ok(faster.filledMs > 6_500 && faster.filledMs < 8_500, `24 taps/s filled in ${faster.filledMs}ms`);
+});
+
+test("slowing down part way through (tired fingers) means the bar never fills", () => {
+  const bar = createBar(0);
+  for (let t = 0; t < ROUND_MS && bar.filledMs === null; ) {
+    bar.tap(t);
+    t += 1000 / Math.max(8, 24 - 0.6 * (t / 1000)); // 24 taps/s, losing 0.6 every second
+  }
+  assert.equal(bar.filledMs, null);
+  assert.ok(bar.level(ROUND_MS) < 70);
+});
+
+test("a full bar stays full, and taps after full don't count", () => {
+  const bar = tapSteadily(24);
+  const at = bar.filledMs;
+  assert.equal(bar.level(at + 10_000), BAR_FULL, "a full bar doesn't drain");
+  const taps = bar.taps;
+  bar.tap(at + 10_100);
+  assert.equal(bar.taps, taps);
 });
 
 test("nobody can fill the bar faster than the minimum time", () => {
-  // 30 taps/s (several fingers) fill 60/s and drain 6/s: 100 takes just under 2 seconds.
-  assert.equal(MIN_FILL_MS, 1851);
-  const bar = createBar(0);
-  for (let t = 0; bar.filledMs === null; t += 1000 / 30) bar.tap(t);
+  // 30 taps/s from the very start, leak included: about 5 seconds.
+  assert.equal(MIN_FILL_MS, 5115);
+  const bar = tapSteadily(MAX_TAPS_PER_SEC);
   assert.ok(bar.filledMs >= MIN_FILL_MS - 100, `filled in ${bar.filledMs}ms`);
 });
 
 test("a saved bar picks up exactly where it was, even on a different clock", () => {
   const bar = createBar(1000);
-  for (let t = 1000; t < 3000; t += 100) bar.tap(t);
+  for (let t = 1000; t < 3000; t += 50) bar.tap(t);
   const saved = JSON.parse(JSON.stringify(bar.save()));
 
   // The same bar on a page whose clock starts somewhere else entirely.
@@ -68,8 +98,7 @@ test("a saved bar picks up exactly where it was, even on a different clock", () 
   assert.equal(again.taps, bar.taps + 1);
 
   // A full bar stays full, with the same finish time.
-  const full = createBar(0);
-  for (let t = 0; full.filledMs === null; t += 100) full.tap(t);
+  const full = tapSteadily(24);
   const restored = createBar(9_000, full.save());
   assert.equal(restored.filledMs, full.filledMs);
   assert.equal(restored.level(99_999), BAR_FULL);

@@ -3,8 +3,10 @@
 import { C, disc, label, paper, sticker } from "../../js/engine/draw.js";
 
 const CRASH_SHOWN_MS = 1000;
-const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN" };
-const SLOT_COLORS = ["red", "blue", "yellow", "green"];
+const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN", black: "BLACK" };
+const SLOT_COLORS = ["red", "blue", "yellow", "green", "black"];
+// The fifth player's snake is ink (black), the one colour draw.js calls something else.
+const fillOf = (slot) => (SLOT_COLORS[slot] === "black" ? C.ink : C[SLOT_COLORS[slot]]);
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 // The canvas's CSS border and hard shadow sit outside the drawing.
@@ -46,7 +48,7 @@ export function createSnakeBoard(root) {
 
   // One outlined tube: an ink pass, then the colour on top (like the arcade's Snake).
   function drawSnake(snake) {
-    const color = C[SLOT_COLORS[snake.slot]];
+    const color = fillOf(snake.slot);
     const body = snake.body;
     const count = body.length / 2;
     const passes = [
@@ -94,7 +96,8 @@ export function createSnakeBoard(root) {
     const x = Math.min(Math.max(left, 4), boardW - w - 4);
     const y = Math.min(Math.max(cy - h / 2, 4), boardH - h - 7);
     sticker(ctx, x, y, w, h, h / 2, fill, { shadow: 3 });
-    label(ctx, text, x + w / 2, y + h / 2 + 1, { size, align: "center", baseline: "middle" });
+    const color = fill === C.ink ? C.paper : C.ink;
+    label(ctx, text, x + w / 2, y + h / 2 + 1, { size, color, align: "center", baseline: "middle" });
   }
 
   function draw() {
@@ -108,7 +111,8 @@ export function createSnakeBoard(root) {
       const { x, y } = center(food[i], food[i + 1]);
       const from = food[i + 2];
       if (from < 0) disc(ctx, x, y, cell * 0.2, C.ink, { stroke: 0 });
-      else disc(ctx, x, y, cell * 0.22, C[SLOT_COLORS[from]], { stroke: 2 });
+      // Black corpse food is a paper ring, so it isn't mistaken for ordinary food.
+      else disc(ctx, x, y, cell * 0.22, fillOf(from) === C.ink ? C.paper : fillOf(from), { stroke: 2 });
     }
 
     for (const snake of frame.snakes) if (snake.alive) drawSnake(snake);
@@ -119,7 +123,7 @@ export function createSnakeBoard(root) {
         const [dx, dy] = DIRS[snake.dir] ?? DIRS.right;
         const head = center(snake.body[0], snake.body[1]);
         const name = names.get(snake.slot) ?? COLOR_NAMES[SLOT_COLORS[snake.slot]];
-        const fill = C[SLOT_COLORS[snake.slot]];
+        const fill = fillOf(snake.slot);
         // Above a snake heading sideways (below, near the top wall); beside one heading up or down.
         if (dy === 0) {
           const above = snake.body[1] >= 2;

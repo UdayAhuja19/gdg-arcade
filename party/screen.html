@@ -28,18 +28,10 @@
 
     <div class="stage">
       <div class="lobby">
-        <svg class="shape shape--yellow lobby__shape lobby__shape--1 drift drift--slow" aria-hidden="true"><use href="assets/shapes.svg#half-circle"/></svg>
-        <svg class="shape shape--green lobby__shape lobby__shape--2 drift drift--reverse" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
-
         <section class="hero-block" aria-labelledby="hero-title">
           <p class="pill pill--filled-ink hero-block__eyebrow">UP NEXT</p>
           <h1 class="hero-block__title" id="hero-title"><span id="hero-word-1">&lt;MASH</span><span id="hero-word-2">BATTLE&gt;</span></h1>
-          <p class="hero-block__tag" id="hero-tag">TAP AS FAST AS YOU CAN. FILL YOUR BAR FIRST. STOP AND IT DRAINS.</p>
-          <ol class="how" aria-label="How to play">
-            <li class="how__step"><span class="how__n" style="background:var(--yellow)">1</span>SCAN THE CODE</li>
-            <li class="how__step"><span class="how__n" style="background:var(--blue)">2</span>TYPE YOUR NAME</li>
-            <li class="how__step"><span class="how__n" style="background:var(--green)">3</span>BATTLE!</li>
-          </ol>
+          <p class="hero-block__tag" id="hero-tag">USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS.</p>
         </section>
 
         <section class="card join-card" aria-labelledby="join-title">
@@ -69,7 +61,7 @@
         <section class="card overlay-card" id="countdown" hidden aria-live="assertive">
           <p class="t-pill">ROUND <span id="cd-round">1</span> · <span id="cd-game">MASH BATTLE</span></p>
           <p class="countdown t-score" id="cd-number">3</p>
-          <p class="t-body">TAP TO FILL YOUR BAR. STOP AND IT DRAINS. FIRST TO FILL IT WINS.</p>
+          <p class="t-body" id="cd-rule">USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS. FIRST TO FILL IT WINS.</p>
         </section>
 
         <section class="battle" id="battle" hidden aria-label="Mash battle">
@@ -98,6 +90,27 @@
           </div>
         </section>
 
+        <section class="lights" id="lights" hidden aria-label="Lights out">
+          <header class="battle__head">
+            <p class="pill pill--lg" id="lights-round">START 1 OF 3 · LIGHTS OUT</p>
+            <p class="pill pill--lg pill--filled-yellow" id="lights-status">GET READY</p>
+          </header>
+          <div class="gantry gantry--big" id="lights-gantry" aria-hidden="true">
+            <span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span>
+          </div>
+          <div class="split__lanes lights__lanes" id="lights-lanes"></div>
+        </section>
+
+        <section class="split" id="split" hidden aria-label="Split second">
+          <header class="battle__head">
+            <p class="pill pill--lg" id="split-round">ROUND 1 OF 3 · SPLIT SECOND</p>
+            <p class="pill pill--lg pill--filled-yellow split__target" id="split-target">STOP AT 3.00</p>
+            <p class="battle__timer t-score" id="split-timer">30</p>
+          </header>
+          <p class="split__banner" id="split-banner" hidden></p>
+          <div class="split__lanes" id="split-lanes"></div>
+        </section>
+
         <section class="card overlay-card results" id="results" hidden aria-labelledby="results-title">
           <svg class="shape card__peek results__peek" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
           <h2 id="results-title" class="results__title bracketed">RESULTS</h2>
@@ -117,7 +130,7 @@
         <h2 id="tips-title" class="pill pill--sm pill--filled-ink tips__label">&lt;GDG PARTY&gt;</h2>
         <ul class="sr-only">
           <li>NO APP NEEDED. JUST YOUR PHONE CAMERA</li>
-          <li>UP TO 4 PLAYERS A ROUND</li>
+          <li>UP TO 5 PLAYERS A ROUND</li>
           <li>WI-FI OR MOBILE DATA BOTH WORK</li>
           <li>OPEN TO ALL MAJORS</li>
           <li>BUILT BY GDG ON CAMPUS UOBD</li>
@@ -125,7 +138,7 @@
         <div class="marquee tips__marquee" aria-hidden="true">
           <div class="marquee__track" id="tips-track">
             <span class="pill pill--thin">NO APP NEEDED. JUST YOUR PHONE CAMERA</span>
-            <span class="pill pill--thin">UP TO 4 PLAYERS A ROUND</span>
+            <span class="pill pill--thin">UP TO 5 PLAYERS A ROUND</span>
             <span class="pill pill--thin">WI-FI OR MOBILE DATA BOTH WORK</span>
             <span class="pill pill--thin">OPEN TO ALL MAJORS</span>
             <span class="pill pill--thin">BUILT BY GDG ON CAMPUS UOBD</span>
@@ -136,7 +149,8 @@
       <div class="game-switch" role="group" aria-labelledby="game-switch-label">
         <span class="t-small game-switch__label" id="game-switch-label">NEXT GAME</span>
         <button class="btn btn--sm" type="button" data-game="tap" aria-pressed="true">MASH BATTLE</button>
-        <button class="btn btn--sm" type="button" data-game="snake" aria-pressed="false">SNAKE ROYALE</button>
+        <button class="btn btn--sm" type="button" data-game="lights" aria-pressed="false">LIGHTS OUT</button>
+        <button class="btn btn--sm" type="button" data-game="split" aria-pressed="false">SPLIT SECOND</button>
       </div>
     </footer>
   </main>
@@ -161,7 +175,7 @@
       </div>
 
       <dl class="player__stats">
-        <div><dt>UPDATES/S</dt><dd class="t-score" data-f="ups">—</dd></div>
+        <div><dt>UPDATES</dt><dd class="t-score" data-f="ups">—</dd></div>
         <div><dt>STUTTERS</dt><dd class="t-score" data-f="stutters">0</dd></div>
         <div><dt>MISSED</dt><dd class="t-score" data-f="missed">0</dd></div>
         <div><dt>REJOINS</dt><dd class="t-score" data-f="rejoins">0</dd></div>

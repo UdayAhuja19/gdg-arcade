@@ -14,6 +14,8 @@ import QRCode from "qrcode";
 import { createRoom, MAX_PLAYERS, UPDATE_HZ } from "./room.js";
 import { createRound, MIN_PLAYERS } from "./round.js";
 import { createSnakeRound } from "./snake-round.js";
+import { createSplitRound } from "./split-round.js";
+import { createLightsRound } from "./lights-round.js";
 import { normalizeName } from "../../public/js/shared/names.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -28,7 +30,7 @@ const JOIN_TIMEOUT_MS = 60_000;
 const SNAPSHOT_EVERY_MS = 250;
 // How often a SNAKE ROYALE board is checked for a due step (steps are 100-143ms apart).
 const GAME_EVERY_MS = 10;
-const GAMES = new Set(["tap", "snake"]);
+const GAMES = new Set(["tap", "snake", "split", "lights"]);
 const MAX_MESSAGE_BYTES = 512;
 // Phones send about 11 messages a second (10 updates and a pong), plus taps. The burst
 // allowance covers a phone whose connection stalled for a few seconds and then sends
@@ -103,12 +105,19 @@ export function createPartyServer({
   snapshotEveryMs = SNAPSHOT_EVERY_MS,
   roundTiming = {},
   snakeTiming = {},
+  splitTiming = {},
+  lightsTiming = {},
   gameEveryMs = GAME_EVERY_MS,
   random,
 } = {}) {
   const room = createRoom();
-  // Both games keep their own round; the big screen picks which one is on.
-  const rounds = { tap: createRound(roundTiming), snake: createSnakeRound(snakeTiming, { random }) };
+  // Each game keeps its own round; the big screen picks which one is on.
+  const rounds = {
+    tap: createRound(roundTiming),
+    snake: createSnakeRound(snakeTiming, { random }),
+    split: createSplitRound(splitTiming, { random }),
+    lights: createLightsRound(lightsTiming, { random }),
+  };
   let game = "tap";
   const current = () => rounds[game];
   const phones = new Map(); // clientId -> its current socket
@@ -152,15 +161,12 @@ export function createPartyServer({
   }
 
   // ---------- Rounds ----------
-  // The host is the phone that joined first; it can start rounds from the phone.
+  // Only the big screen starts rounds; phones just see the line-up.
   function roundMessage(clientId, present, now) {
-    const host = present[0] ?? null;
     return {
       t: "round",
       game,
       ...current().viewFor(clientId, now),
-      host: host?.clientId === clientId,
-      hostName: host?.name ?? null,
       players: present.length,
       minPlayers: MIN_PLAYERS,
     };
@@ -184,10 +190,12 @@ export function createPartyServer({
     return result;
   }
 
-  // Someone left the party (kicked, left, or gone too long): out of both games' rounds.
+  // Someone left the party (kicked, left, or gone too long): out of every game's round.
   function removeFromRounds(clientId) {
     const now = clock();
     rounds.tap.remove(clientId);
+    rounds.split.remove(clientId);
+    rounds.lights.remove(clientId);
     if (rounds.snake.remove(clientId, now)) {
       const frame = rounds.snake.frame();
       if (frame) toScreens({ t: "arena", ...frame });
@@ -196,6 +204,21 @@ export function createPartyServer({
 
   // SNAKE ROYALE runs on the server: step the board when it's due, show it on the big
   // screen, and tell phones when something happened to them.
+  // SPLIT SECOND's stages (target shown, window open, reveal) change on the server's clock, so
+  // check them often: a window that opens late costs everyone the same, but it should be crisp.
+  function runSplit() {
+    const split = rounds.split;
+    if (game !== "split" || (split.phase !== "countdown" && split.phase !== "playing")) return;
+    if (split.tick(clock())) lineupChanged();
+  }
+
+  // LIGHTS OUT: lights out and the end of each window land on the server's clock.
+  function runLights() {
+    const lights = rounds.lights;
+    if (game !== "lights" || (lights.phase !== "countdown" && lights.phase !== "playing")) return;
+    if (lights.tick(clock())) lineupChanged();
+  }
+
   function runSnake() {
     const snake = rounds.snake;
     if (game !== "snake" || (snake.phase !== "countdown" && snake.phase !== "playing")) return;
@@ -360,11 +383,48 @@ export function createPartyServer({
         rounds.snake.turn(clientId, msg, now);
         return;
       }
-      case "start": {
-        // Only the host phone can start; everyone else waits for it (or the big screen).
-        if (room.present()[0]?.clientId !== clientId) return;
-        const result = startRound();
-        if (result.error) send(ws, { t: "notice", message: result.error });
+      case "sync": {
+        // Clock sync: the phone sends its own time, the server answers with its own. From the
+        // round trip the phone works out how far its clock is from the server's.
+        if (Number.isFinite(msg.c)) send(ws, { t: "sync", c: msg.c, s: clock() });
+        return;
+      }
+      case "lights": {
+        // LIGHTS OUT: one tap a start, timed on the phone. Acked, so a lost tap is resent.
+        if (rounds.lights.tick(now)) lineupChanged();
+        const result = rounds.lights.press(clientId, msg, now);
+        if (Number.isSafeInteger(msg.seq)) send(ws, { t: "ack", round: msg.round, seq: msg.seq, status: result.status });
+        if (result.status !== "saved") return;
+        const leg = result.entry.legs.findLastIndex((l) => l !== null);
+        toScreens({ t: "lights", slot: result.entry.slot, ...result.entry.legs[leg] });
+        if (rounds.lights.tick(now)) lineupChanged();
+        else send(ws, roundMessage(clientId, room.present(), now));
+        return;
+      }
+      case "split": {
+        // SPLIT SECOND: a run starting or stopping, or a time locked in. Acked so the phone can
+        // resend a lock that got lost; the big screen hears every one at once.
+        if (rounds.split.tick(now)) lineupChanged();
+        const result = rounds.split.act(clientId, msg, now);
+        if (Number.isSafeInteger(msg.seq)) send(ws, { t: "ack", round: msg.round, seq: msg.seq, status: result.status });
+        if (result.status !== "saved") return;
+        const { entry } = result;
+        toScreens({
+          t: "split",
+          slot: entry.slot,
+          event: msg.event,
+          runs: entry.runs,
+          ms: entry.current?.ms ?? null,
+          error: entry.current?.error ?? null,
+          locked: entry.locked,
+        });
+        // Locking in changes what this phone may do, and may end the leg for everyone.
+        if (msg.event === "lock") {
+          if (rounds.split.tick(now)) lineupChanged();
+          else send(ws, roundMessage(clientId, room.present(), now));
+        } else {
+          send(ws, roundMessage(clientId, room.present(), now));
+        }
         return;
       }
       case "network": {
@@ -499,8 +559,7 @@ export function createPartyServer({
         }
       } else if (msg?.t === "clear") {
         for (const player of room.clear()) dropPhone(player.clientId, { t: "kicked" }, 4002, "removed");
-        rounds.tap.reset();
-        rounds.snake.reset();
+        for (const round of Object.values(rounds)) round.reset();
       } else if (msg?.t === "start") {
         const result = startRound();
         if (result.error) send(ws, { t: "notice", message: result.error });
@@ -557,10 +616,16 @@ export function createPartyServer({
           const now = clock();
           const tapChanged = rounds.tap.tick(now);
           const snakeChanged = rounds.snake.tick(now);
-          if (tapChanged || snakeChanged) roundToPhones();
+          const splitChanged = rounds.split.tick(now);
+          const lightsChanged = rounds.lights.tick(now);
+          if (tapChanged || snakeChanged || splitChanged || lightsChanged) roundToPhones();
           toScreens(snapshotMessage());
         }, snapshotEveryMs),
-        setInterval(runSnake, gameEveryMs),
+        setInterval(() => {
+          runSnake();
+          runSplit();
+          runLights();
+        }, gameEveryMs),
       ];
       return ports;
     },

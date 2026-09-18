@@ -40,7 +40,7 @@
 
         <button class="btn btn--primary btn--lg phone-card__go" type="submit" id="join-btn">&lt;JOIN&gt;</button>
       </form>
-      <p class="t-small phone-note">UP TO 4 PHONES. KEEP THIS PAGE OPEN WHILE YOU TEST.</p>
+      <p class="t-small phone-note">UP TO 5 PHONES. KEEP THIS PAGE OPEN WHILE YOU TEST.</p>
     </section>
 
     <section class="phone-view" id="view-play" hidden aria-labelledby="you">
@@ -56,7 +56,6 @@
         </div>
         <p class="sync" id="sync" hidden></p>
         <p class="t-small round-box__note" id="round-note"></p>
-        <button class="btn btn--primary btn--lg round-box__start" type="button" id="start-btn" hidden>&lt;START BATTLE&gt;</button>
       </section>
 
       <div class="tap-zone">
@@ -64,6 +63,26 @@
           <span class="tap__label" id="tap-label">TAP</span>
           <span class="tap__count t-score" id="tap-count">0</span>
         </button>
+      </div>
+
+      <!-- LIGHTS OUT: five lights; the whole panel is the button. Tap when they all go out. -->
+      <button class="lights-pad" id="lights-pad" type="button" hidden>
+        <span class="gantry" aria-hidden="true">
+          <span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span>
+        </span>
+        <span class="lights-pad__label" id="lights-label">TAP WHEN THE LIGHTS GO OUT</span>
+      </button>
+
+      <!-- SPLIT SECOND: one button starts and stops a hidden clock; LOCK IT IN keeps the last run -->
+      <div class="split-zone" id="split-zone" hidden>
+        <p class="split-goal" id="split-goal" hidden><span class="split-goal__label">STOP AT</span><span class="split-goal__time t-score" id="split-goal-time">5.00</span></p>
+        <div class="split-zone__circle">
+          <button class="tap split-btn" id="split-btn" type="button">
+            <span class="tap__label" id="split-label">START</span>
+            <span class="tap__count t-score" id="split-runs">RUN 0</span>
+          </button>
+        </div>
+        <button class="btn btn--primary btn--lg split-lock" id="split-lock" type="button" disabled>&lt;LOCK IT IN&gt;</button>
       </div>
 
       <!-- SNAKE ROYALE controls: a trackpad. Slide a finger to turn; keep gliding to turn again. -->

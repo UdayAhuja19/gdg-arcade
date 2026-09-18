@@ -77,7 +77,7 @@ The folder's git settings travel with it: commits are made as **Uday Ahuja**, an
 Five games (Dino Run, Flappy Byte, Snake, Memory Match, Stack Tower) with top-3 leaderboards in MySQL, an admin page, and an online demo on GitHub Pages. `README.md` covers setup and the fair-day checklist. `DESIGN.md` is the brand rulebook.
 
 ### The party game (being planned)
-The idea: **a 4-player competitive game.** Students scan a QR code, join a party on their phones, and play against each other live.
+The idea: **a competitive game for up to 5 players.** Students scan a QR code, join a party on their phones, and play against each other live.
 
 Decisions so far:
 
@@ -91,7 +91,8 @@ Decisions so far:
 | How does SNAKE ROYALE handle lag? | **The laptop runs the board and draws it on the big screen; phones are only controllers** | The big screen is plugged into the laptop, so the picture has no lag. Only turns cross the network: about 50 ms one way at a 100 ms tunnel ping, under one snake step. |
 | SNAKE ROYALE rules | **Out when you crash; your body turns into food; last snake left wins. No time limit.** Steer by sliding on a trackpad. | Uday's choices. The snakes slowly speed up so a round can't go on forever, and the booth has END ROUND. |
 | How many players to start? | **1 or more** (`MIN_PLAYERS` in `server/party/round.js`) | You can test alone; set it to 2 for the fair. |
-| Who starts a round? | **The big screen, or the first phone that joined (the host)** | The booth stays in control; a group can also start itself. |
+| How many players? | **Up to 5. The fifth colour is black (the brand's ink)** | The brand has four colours, and ink is already a game colour in the arcade. Black's snake starts at the top middle. |
+| Who starts a round? | **Only the big screen** | The booth stays in control. Phones have no start button (there used to be a host phone that could start). |
 | Can a player's taps get lost? | **No: each phone keeps its own bar and resends it until the laptop confirms it** | A reload, a locked screen or a network drop doesn't lose a result. |
 
 Other game ideas considered, all of which show every player's progress on the big screen:
@@ -172,12 +173,12 @@ If the server stops, the big screen hides the QR code and shows *PARTY SERVER OF
 ## 3b. Rounds and MASH BATTLE
 
 **How a round goes**
-1. **Lobby.** Phones join and see who the host is. The big screen shows `LOBBY · N PLAYERS`.
-2. **Start.** Tap **START** on the big screen or **START BATTLE** on the host phone. One phone is enough (`MIN_PLAYERS = 1`). Phones never show PLAY AGAIN: after a round, the big screen runs the next one.
+1. **Lobby.** Phones join and see how many players are in. The big screen shows `LOBBY · N PLAYERS`.
+2. **Start.** Tap **START** on the big screen. One phone is enough (`MIN_PLAYERS = 1`). Phones can't start a round or play again: the big screen runs every round.
    - From the 3-2-1 until the round goes back to the lobby, each phone in it shows one screen that can't scroll: its colour, the round status and the TAP circle or trackpad.
 3. **Countdown.** 3-2-1 on the big screen and on every phone, then GO!
 4. **Battle.**
-   - **Phones:** each has a bar above the TAP button. Every tap adds 2%. The bar always drains 6% a second, and after a 0.35 s pause it drains another 24% a second.
+   - **Phones:** each has a bar above the TAP button. Every tap adds 1%. The bar always drains 2% a second **plus 15% of how full it is**, and after a 0.35 s pause it drains another 24% a second. So it gets harder the fuller it is: one finger stalls around 40%, two thumbs around 80%, and filling it takes 18+ taps a second with several fingers for 8–18 seconds. Most rounds are won by the fullest bar at 30 seconds. (It used to take about 2 seconds with several fingers, which was too easy.)
    - **Big screen:** one tall bar per player in their colour, with a timer. When someone fills their bar it shows "FILLED IT!" and a FULL! sticker.
 5. **End.** The round ends 1.5 s after the first full bar, or at 30 s.
 6. **Results.**
@@ -209,8 +210,8 @@ This was all tested:
 | `server/party/tunnel.js` | Starts `cloudflared`, reads the public link, and restarts it (with a new link) if it stops. |
 | `server/party/index.js` | The `npm run party` command and its `--lan` / `--local` options. |
 | `server/party/round.js` | Rounds: start (1+ players), countdown, the MASH BATTLE checks, late results, ranking. Pure logic, tested with a fake clock. |
-| `public/js/shared/tap-battle.js` | The MASH BATTLE rules and the bar itself (fill, drain, save/restore), used by phones and the server. |
-| `party/phone.html`, `party/js/phone.js` | Phone page: join form, host START, the battle bar and TAP button, saving and resending, auto-reconnect, keep-screen-awake, Wi-Fi/mobile-data switch. |
+| `public/js/shared/tap-battle.js` | The MASH BATTLE rules and the bar itself (fill, drain, leak, save/restore), used by phones and the server. `settleLevel()` shows where any tapping speed tops out. |
+| `party/phone.html`, `party/js/phone.js` | Phone page: join form, the battle bar and TAP button, saving and resending, auto-reconnect, keep-screen-awake, Wi-Fi/mobile-data switch. |
 | `party/screen.html`, `party/js/screen.js` | Big screen: QR code, START / PLAY AGAIN, 4 connection cards, the countdown, the battle bars, results, verdict banner, tips marquee. |
 | `party/css/party.css` | Styles for both pages, built on the arcade's brand CSS and following `DESIGN.md`. |
 | `test/party-room.test.js`, `test/party-round.test.js`, `test/tap-battle.test.js`, `test/party-server.test.js` | 47 tests: room rules, rounds, the bar, and the real server with real sockets (including crash, flood, busy-port, a full battle and a late result). |
@@ -238,8 +239,8 @@ This was all tested:
 
 **How to play it**
 1. On the big screen, pick **SNAKE ROYALE** under NEXT GAME (bottom right). You can only switch between rounds.
-2. Start it from the big screen or the host phone, the same as MASH BATTLE.
-3. **Countdown:** the board shows every snake in its corner with the player's name beside it (red top left, blue top right, yellow bottom right, green bottom left). Phones say "YOU'RE RED, TOP LEFT".
+2. Start it from the big screen, the same as MASH BATTLE.
+3. **Countdown:** the board shows every snake in its corner with the player's name beside it (red top left, blue top right, yellow bottom right, green bottom left, black top middle). Phones say "YOU'RE RED, TOP LEFT".
 4. **Playing:**
    - **Phones** show a trackpad. Slide a finger the way you want to go; keep gliding to turn again (an L-shaped slide is two turns). The edge arrow for your last turn lights up. Arrow keys/WASD work in a laptop window. UP means up on the big screen.
    - **The big screen** shows the board, plus a legend of who is which colour, how long each snake is, and what knocked each one out.
@@ -267,11 +268,40 @@ This was all tested:
 - `npm test`: 102 tests pass, with MySQL on.
 - **Browser checks:** 3 bot phones steering around each other plus a phone page, on the big screen at 1920×1080, 1280×720 and 1024×768 and the phone at 375 px:
   - the switch, the countdown with name tags, play, crashes turning into food, results, and GAME OVER when playing alone
-  - arrow-key and swipe steering, and the host phone starting a round
+  - arrow-key and swipe steering
   - MASH BATTLE still working afterwards
 - **Not yet checked:** real phones, touch swipes on an iPhone, the tunnel, and campus Wi-Fi.
 
 ---
+
+
+## 3d. SPLIT SECOND
+
+From the "stop the stopwatch at exactly 10.00" trend (Uday's idea, 18 Sep).
+
+**How to play it**
+1. Pick **SPLIT SECOND** under NEXT GAME, then START.
+2. A game is **3 rounds**. Each round shows a random target of 1, 2, 3, 4 or 5 seconds (no repeats), then opens a **30-second window**.
+3. In the window each phone has one big button: START, then STOP, as many times as you like. **The phone never shows a number**, so you count in your head. When you're happy with a run, press **`<LOCK IT IN>`**.
+4. The big screen shows every player's clock running and every stopped time with how far off it was. The players can't see it, the crowd can.
+5. The window ends when everyone has locked in, or at 30 seconds (an unlocked phone keeps its last stopped run; no run at all costs 5.00).
+6. **Reveal:** each phone finally shows its own time and error, and the big screen shows the times and totals so far. Then the next round.
+7. After 3 rounds: lowest total error wins.
+
+**Decisions:** the phone owns the clock (a press counts the moment it happens) and the laptop only checks it against its own clock for the same run. Start/stop are sent once; a lock is resent until the laptop confirms it. Nothing on the phone moves while a run is going, since a rhythm would help people count.
+
+**To test on campus:** whether 30 seconds is the right window, whether players can see the big screen from where they stand (if they can, it stops being blind), and whether 5.00 for a miss feels fair.
+
+
+## 3e. LIGHTS OUT (replaces SNAKE ROYALE on the switch)
+
+Eduroam blocks phones from reaching the laptop directly, so the stall has to use the Cloudflare tunnel, and SNAKE ROYALE's steering suffers from the ping. LIGHTS OUT is the F1 start-light reaction test and doesn't care about ping at all. SNAKE ROYALE's code is kept; only its NEXT GAME button is gone.
+
+**How to play:** 3 starts. Five red lights come on one a second on the big screen and every phone, then after a random 0.2–3 s hold they all go out: tap as fast as you can. Tapping before lights out is a JUMP START (+1.000). No tap within 1.5 s is +1.000. Lowest total over 3 starts wins.
+
+**How it beats the ping:** the laptop schedules each start on its own clock and sends the whole schedule before the first light. Each phone syncs its clock with the laptop, then switches its own lights off at the scheduled moment, so every phone and the big screen go dark together. The reaction is timed on the phone, so the tunnel's delay never enters anyone's time.
+
+**To test on campus:** that the phones' lights and the big screen's go out together over the tunnel (film it), and that 1.5 s is enough to tap.
 
 ## 4. How to run it
 
@@ -299,16 +329,16 @@ Then open **http://localhost:3101** on the laptop (or the big screen) and scan t
 
 ## 5. Next: the campus test (about 15 minutes)
 
-Bring the laptop, a charger, and 4 phones: **at least one iPhone and one Android**. If you can, connect the laptop to the booth's actual screen.
+Bring the laptop, a charger, and 5 phones: **at least one iPhone and one Android**. If you can, connect the laptop to the booth's actual screen.
 
 1. `npm run party`, open http://localhost:3101, and wait for the QR code.
-2. Join all 4 phones **on campus Wi-Fi**. Leave them for 2 minutes and note each verdict.
+2. Join all 5 phones **on campus Wi-Fi**. Leave them for 2 minutes and note each verdict.
 3. Switch 2 phones to **mobile data**. On each phone, tap *MOBILE DATA* under "Switched network?". Wait 2 minutes and note the verdicts.
 4. **Lock one phone for 5 seconds**, then unlock it. Its card should say PAUSED, then carry on in the same colour. If the lock dropped the connection, REJOINS goes up by 1, but the verdict shouldn't suffer.
 5. **Switch an app away and back**, and **turn Wi-Fi off and on**.
 6. **Walk to the far end of the booth.**
-7. **Play a few MASH BATTLE rounds** with 2, 3 and 4 phones. Watch whether the big screen's bars keep up, and whether the winner feels right to the players.
-8. **Play a few SNAKE ROYALE rounds** with 2, 3 and 4 phones, over the tunnel and on mobile data. Ask players whether turns land when they press, and try swiping on an iPhone. If turns feel late, note the ping and stutters on the cards.
+7. **Play a few MASH BATTLE rounds** with 2, 3 and 5 phones. Watch whether the big screen's bars keep up, and whether the winner feels right to the players.
+8. **Play a few SNAKE ROYALE rounds** with 2, 3 and 5 phones, over the tunnel and on mobile data. Ask players whether turns land when they press, and try swiping on an iPhone. If turns feel late, note the ping and stutters on the cards.
 9. **Lock a phone or turn its Wi-Fi off mid-battle**, then come back. Its bar should still be there, and its result should still reach the big screen.
 10. If campus Wi-Fi blocks the page entirely (it never loads, or it's stuck on CONNECTING…), note that too. Mobile data is the fallback.
 
@@ -334,8 +364,8 @@ The round flow, the fairness checks and the no-lost-data plumbing are done. What
    - **Phones run it** (like MASH BATTLE): a rules file like `tap-battle.js`, its own checks like `round.js` `report()`, and resending.
    - **The laptop runs it** (like SNAKE ROYALE): a rules file like `snake-battle.js`, a round like `snake-round.js`, and frames to the big screen.
 
-   Either way it needs its own phone and big-screen views, an entry in `rounds` and `GAMES` in `server.js`, and a button on the NEXT GAME switch. The lobby, countdown, results and host stay as they are.
-2. **Tune both games** after the campus test: fill per tap, drain and time limit at the top of `tap-battle.js`; speed, board size and food at the top of `snake-battle.js`.
+   Either way it needs its own phone and big-screen views, an entry in `rounds` and `GAMES` in `server.js`, and a button on the NEXT GAME switch. The lobby, countdown and results stay as they are.
+2. **Tune both games** after the campus test: fill per tap, drain, leak and time limit at the top of `tap-battle.js`; speed, board size and food at the top of `snake-battle.js`.
 3. **Set `MIN_PLAYERS` to 2** for the fair if solo rounds shouldn't be allowed.
 4. **Winners on the leaderboard:** use the arcade's MySQL API. A new game key needs entries in `public/js/shared/games.js` and `server/games.js`; see `CLAUDE.md`. Decide whether party wins get their own board.
 5. **Playtest with 4 real phones on campus about a week before the fair.**

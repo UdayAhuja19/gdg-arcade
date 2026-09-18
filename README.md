@@ -95,16 +95,20 @@ After that, every push to `main` runs the tests and republishes the demo automat
 4. Before doors open, clear the test scores: go to `/admin` → **Reset everything** → type `RESET`.
 5. If someone enters a rude name, open `/admin` in another tab and click **Hide player**.
 
+**Names already in use:** if someone types a name that already exists, the arcade asks `A PLAYER CALLED SARA K ALREADY EXISTS. ARE YOU THAT PLAYER?` with `<YES, THAT'S ME>` (carry on with that player's scores) and `<NO, NEW NAME>` (clears the box so they can pick another, e.g. name + surname initial). Names are matched ignoring case and extra spaces.
+
 **Walk-away reset:** after 45 seconds with no input on the home page or a game-over screen, the arcade clears the name and goes back to the name box, so the next student doesn't play under someone else's name. The **NEXT PLAYER** button does the same thing straight away.
 
-## Party mode: MASH BATTLE and SNAKE ROYALE (4-player games, in progress)
+## Party mode: MASH BATTLE, LIGHTS OUT and SPLIT SECOND (5-player games, in progress)
 
 Up to 4 students join on their phones by scanning a QR code on the big screen, and battle each other. **NEXT GAME** (bottom right of the big screen) picks the game:
 
-- **MASH BATTLE:** every tap fills your bar, and it drains when you stop. First to fill it wins.
+- **MASH BATTLE:** every tap fills your bar, and the fuller it gets the faster it drains, so filling it takes every finger for many seconds. First to fill it wins; otherwise the fullest bar at 30 seconds.
 - **SNAKE ROYALE:** phones become trackpads (slide a finger to steer), and everyone watches one board on the big screen. Eat to grow. Crash into a wall, yourself or another snake and you're out, and your body turns into food. The last snake left wins.
+- **LIGHTS OUT:** the F1 start. Five red lights come on one a second, then go out after a random hold; tap as fast as you can. Jump starts cost a second. Fastest total over 3 starts wins. Phones sync their clocks with the laptop, so the lights go out together everywhere, even over the tunnel. (SNAKE ROYALE is still in the code but off the NEXT GAME switch.)
+- **SPLIT SECOND:** the stopwatch trend. 3 rounds, each with a target of 1–5 seconds. In a 30-second window you start and stop a clock on your phone as often as you like, with the numbers hidden, then lock one time in. The big screen shows everyone's clocks; the real times are revealed after each round. Lowest total error wins.
 
-A round can start with fewer than 4 phones, from the big screen's **START** or from the first phone that joined. While people play, the screen also checks the connection: each phone gets a card with a moving dot, its ping and a verdict. In MASH BATTLE each phone keeps its own bar and resends it until the laptop confirms it, so a reload or a dropped connection doesn't lose anyone's result. In SNAKE ROYALE the laptop runs the board, so the big screen never lags.
+A round can start with fewer than 5 phones, and only from the big screen's **START**. While people play, the screen also checks the connection: each phone gets a card with a moving dot, its ping and a verdict. In MASH BATTLE each phone keeps its own bar and resends it until the laptop confirms it, so a reload or a dropped connection doesn't lose anyone's result. In SNAKE ROYALE the laptop runs the board, so the big screen never lags.
 
 Install the free Cloudflare tunnel once (no account needed):
 
@@ -118,7 +122,7 @@ Then start the test:
 npm run party
 ```
 
-Open **http://localhost:3101** on the big screen and scan the QR code with up to 4 phones. They can be on campus Wi-Fi or mobile data. The top verdict reads **READY FOR PARTY GAMES** once every phone is good: 95% of pings under 250ms, no more than 2 stutters a minute, and no missed pings.
+Open **http://localhost:3101** on the big screen and scan the QR code with up to 5 phones. They can be on campus Wi-Fi or mobile data. The top verdict reads **READY FOR PARTY GAMES** once every phone is good: 95% of pings under 250ms, no more than 2 stutters a minute, and no missed pings.
 
 | Command | Phones join through |
 |---|---|
@@ -126,7 +130,7 @@ Open **http://localhost:3101** on the big screen and scan the QR code with up to
 | `npm run party -- --lan` | The same Wi-Fi as the laptop (no tunnel) |
 | `npm run party -- --local` | Nothing: open http://localhost:3100 in other tabs to try it alone |
 
-Only the phone page is reachable from outside. The arcade, admin page and MySQL stay private. See [HANDOFF.md](HANDOFF.md) for the plan and what to test on campus. The games' numbers are at the top of `public/js/shared/tap-battle.js` (fill per tap, drain, time limit) and `public/js/shared/snake-battle.js` (speed, board size, food), and the fewest phones needed to start is `MIN_PLAYERS` in `server/party/round.js`.
+Only the phone page is reachable from outside. The arcade, admin page and MySQL stay private. See [HANDOFF.md](HANDOFF.md) for the plan and what to test on campus. The games' numbers are at the top of `public/js/shared/tap-battle.js` (fill per tap, drain, leak, time limit) and `public/js/shared/snake-battle.js` (speed, board size, food), and the fewest phones needed to start is `MIN_PLAYERS` in `server/party/round.js`.
 
 ## How scoring works
 

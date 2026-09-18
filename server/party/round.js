@@ -16,11 +16,11 @@
 // Pure logic, like room.js: no sockets or timers, everything takes `now`.
 import {
   BAR_FULL,
-  MAX_FILL_PER_SEC,
   MAX_TAPS_PER_SEC,
   MIN_FILL_MS,
   ROUND_MS,
   TAPS_TO_FILL,
+  maxLevelAt,
 } from "../../public/js/shared/tap-battle.js";
 
 // Fewest phones needed to start. 1 lets you try a round alone; set it to 2 for the fair.
@@ -194,7 +194,7 @@ export function createRound(timing = {}) {
       if (!Number.isFinite(reported)) return { status: "rejected" };
 
       const playedMs = Math.min(now - startsAt, roundMs);
-      const maxLevel = (playedMs / 1000) * MAX_FILL_PER_SEC + FILL_SLACK;
+      const maxLevel = maxLevelAt(playedMs) + FILL_SLACK;
       const nextLevel = Math.min(Math.max(reported, 0), BAR_FULL, maxLevel);
       if (nextLevel !== entry.level) entry.reachedAt = now;
       entry.level = nextLevel;

@@ -1,7 +1,9 @@
 // The big screen for the party. The lobby is built for the people watching: the next game's
 // name, a big QR code, a preview of the game playing itself and a seat per player. STATS
-// swaps in the connection numbers for each phone. Rounds of MASH BATTLE or SNAKE ROYALE play
-// over the lobby.
+// swaps in the connection numbers for each phone. Rounds of MASH BATTLE, SNAKE ROYALE or SPLIT
+// SECOND play over the lobby.
+import { fmt, isBullseye, signed } from "../../js/shared/split-second.js";
+import { legText as lightsLegText, fmt as fmtReaction } from "../../js/shared/lights-out.js";
 import { createLobbyDemo } from "./lobby-demo.js";
 import { createSnakeBoard } from "./snake-board.js";
 
@@ -11,8 +13,8 @@ const playerTpl = $("player-tpl");
 const emptyTpl = $("empty-tpl");
 
 // Each slot's brand shape peeks from behind its card.
-const SHAPES = { red: "circle", blue: "flower", yellow: "blob", green: "triangle" };
-const SLOT_COLORS = ["red", "blue", "yellow", "green"];
+const SHAPES = { red: "circle", blue: "flower", yellow: "blob", green: "triangle", black: "capsule" };
+const SLOT_COLORS = ["red", "blue", "yellow", "green", "black"];
 const NETWORK_LABEL = { wifi: "WI-FI", cellular: "MOBILE DATA", unknown: "NETWORK ?" };
 const SPARK_MAX_MS = 500;
 const RECONNECT_MS = 1000;
@@ -28,7 +30,7 @@ const TUNNEL_TEXT = {
 };
 
 let ws = null;
-let maxPlayers = 4;
+let maxPlayers = 5;
 let presentCount = 0;
 // Whether each slot's phone is connected right now, for the snake legend.
 let connectedSlots = [];
@@ -145,8 +147,13 @@ function renderPlayers(players) {
 }
 
 // ---------- Rounds ----------
-const GAME_NAMES = { tap: "MASH BATTLE", snake: "SNAKE ROYALE" };
-const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN" };
+const GAME_NAMES = { tap: "MASH BATTLE", snake: "SNAKE ROYALE", split: "SPLIT SECOND", lights: "LIGHTS OUT" };
+const COUNTDOWN_RULES = {
+  tap: "USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS. FIRST TO FILL IT WINS.",
+  split: "3 ROUNDS. HIT THE TARGET TIME WITH THE NUMBERS HIDDEN. LOWEST TOTAL ERROR WINS.",
+  lights: "3 STARTS. FIVE RED LIGHTS, THEN LIGHTS OUT: TAP. FASTEST TOTAL WINS. JUMP STARTS COST 1.000.",
+};
+const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN", black: "BLACK" };
 
 function roundPillText(r) {
   const players = `${presentCount} ${presentCount === 1 ? "PLAYER" : "PLAYERS"}`;
@@ -157,6 +164,12 @@ function roundPillText(r) {
       if (r.game === "snake") {
         if (r.over) return `ROUND ${r.number} · ${r.winner ? `${r.winner} WINS!` : r.draw ? "DRAW!" : "GAME OVER"}`;
         return `ROUND ${r.number} · ${r.alive} ALIVE`;
+      }
+      if (r.game === "lights") return `ROUND ${r.number} · START ${r.leg + 1} OF ${r.legs}`;
+      if (r.game === "split") {
+        const leg = `${r.leg + 1} OF ${r.legs}`;
+        if (r.stage === "run") return `ROUND ${r.number} · ${leg} · ${Math.ceil(r.endsInMs / 1000)}S LEFT`;
+        return `ROUND ${r.number} · ${leg}`;
       }
       if (r.winner) return `ROUND ${r.number} · ${r.winner} FILLED IT!`;
       return r.endsInMs > 0 ? `ROUND ${r.number} · ${Math.ceil(r.endsInMs / 1000)}S LEFT` : `ROUND ${r.number} · TIME!`;
@@ -203,7 +216,8 @@ function causeText(cause) {
 function renderResults(r) {
   $("results-round").textContent = `ROUND ${r.number} · ${GAME_NAMES[r.game]}`;
   const top = r.results[0];
-  const winnerText = r.game === "snake" ? (r.winner ? `${r.winner} WINS!` : r.draw ? "DRAW!" : "") : top ? `${top.name} WINS!` : "";
+  const winnerText =
+    r.game === "tap" ? (top ? `${top.name} WINS!` : "") : r.winner ? `${r.winner} WINS!` : r.draw ? "DRAW!" : "";
   $("results-winner").hidden = !winnerText;
   $("results-winner").textContent = winnerText;
   const aliveCount = r.results.filter((entry) => entry.alive).length;
@@ -219,12 +233,24 @@ function renderResults(r) {
     name.textContent = entry.name;
     const score = document.createElement("span");
     score.className = "board__score";
-    score.textContent = r.game === "snake" ? `LENGTH ${entry.length}` : barText(entry);
+    score.textContent =
+      r.game === "snake"
+        ? `LENGTH ${entry.length}`
+        : r.game === "split"
+          ? `${fmt(entry.total)} OFF`
+          : r.game === "lights"
+            ? fmtReaction(entry.total)
+            : barText(entry);
     row.append(rank, name, score);
-    if (r.game === "snake") {
+    if (r.game === "snake" || r.game === "split" || r.game === "lights") {
       const detail = document.createElement("span");
       detail.className = "board__detail";
-      detail.textContent = snakeDetail(entry, aliveCount);
+      detail.textContent =
+        r.game === "snake"
+          ? snakeDetail(entry, aliveCount)
+          : r.game === "lights"
+            ? entry.legs.map((l) => lightsLegText(l)).join(" · ")
+            : splitDetail(entry, r.targets);
       row.classList.add("board__row--detail");
       row.append(detail);
     }
@@ -281,7 +307,9 @@ function setLane(slot, level, full) {
 
 // ---------- Lobby ----------
 const HERO = {
-  tap: { words: ["<MASH", "BATTLE>"], tag: "TAP AS FAST AS YOU CAN. FILL YOUR BAR FIRST. STOP AND IT DRAINS." },
+  lights: { words: ["<LIGHTS", "OUT>"], tag: "FIVE RED LIGHTS. WHEN THEY GO OUT, TAP. FASTEST OVER 3 STARTS WINS." },
+  split: { words: ["<SPLIT", "SECOND>"], tag: "STOP THE CLOCK DEAD ON. YOUR PHONE HIDES THE NUMBERS. THE SCREEN DOESN'T." },
+  tap: { words: ["<MASH", "BATTLE>"], tag: "USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS." },
   snake: { words: ["<SNAKE", "ROYALE>"], tag: "STEER WITH YOUR PHONE. EAT TO GROW. LAST SNAKE STANDING WINS." },
 };
 const demo = createLobbyDemo($("demo"));
@@ -347,7 +375,19 @@ function renderRound(r) {
     syncDemo();
     return;
   }
+  if (r.game === "split") {
+    renderSplit(r);
+    syncDemo();
+    return;
+  }
+  if (r.game === "lights") {
+    renderLights(r);
+    syncDemo();
+    return;
+  }
   $("snake").hidden = true;
+  $("split").hidden = true;
+  $("lights").hidden = true;
 
   // Countdown, GO! for a moment, then the bars.
   const elapsed = r.durationMs - r.endsInMs;
@@ -360,7 +400,8 @@ function renderRound(r) {
   $("results").hidden = !showResults;
 
   if (showCountdown) {
-    $("cd-game").textContent = GAME_NAMES.tap;
+    $("cd-game").textContent = GAME_NAMES[r.game];
+    $("cd-rule").textContent = COUNTDOWN_RULES[r.game] ?? "";
     $("cd-round").textContent = r.number;
     $("cd-number").textContent = r.phase === "countdown" ? Math.max(1, Math.ceil(r.startsInMs / 1000)) : "GO!";
   }
@@ -436,6 +477,8 @@ function renderSnake(r) {
   $("overlay").hidden = !running && !showResults;
   $("countdown").hidden = true;
   $("battle").hidden = true;
+  $("split").hidden = true;
+  $("lights").hidden = true;
   section.hidden = !running;
   $("results").hidden = !showResults;
   showResultsCard(r, showResults);
@@ -459,6 +502,282 @@ function renderSnake(r) {
   board.setNames(r.players);
   board.setTags(r.phase === "countdown");
   renderLegend(r.players);
+}
+
+// ---------- Rounds: SPLIT SECOND ----------
+// Each player's lane runs a clock of its own for the crowd while their run is going (the
+// phones show no numbers), then shows the time their phone measured the moment it lands.
+const splitLanes = new Map(); // slot -> { el, runAt (performance.now() of the run's start, or null) }
+let splitFrame = 0;
+let splitTarget = 0; // the current leg's target, for errors shown between snapshots
+
+// "1.00 +0.04 · 3.00 MISS · 5.00 −0.12" under a name in the results.
+function splitDetail(entry, targets = []) {
+  return (entry.legs ?? [])
+    .map((leg, i) => `${fmt(targets[i] ?? 0)} ${leg ? signed(leg.ms, targets[i]) : "MISS"}`)
+    .join(" · ");
+}
+
+// Green within the bullseye, yellow within a quarter second, red beyond.
+const errorLevel = (error) => (isBullseye(error) ? "good" : error <= 250 ? "ok" : "bad");
+
+function buildSplitLanes(r) {
+  const key = `${r.number}:${r.players.map((p) => `${p.slot}${p.name}`).join(",")}`;
+  const lanes = $("split-lanes");
+  if (lanes.dataset.key === key) return;
+  lanes.dataset.key = key;
+  splitLanes.clear();
+  const cols = r.players.map((p) => {
+    const col = document.createElement("article");
+    col.className = "split-col";
+    col.dataset.color = p.color;
+    col.innerHTML =
+      '<p class="split-col__name"></p>' +
+      '<p class="split-col__clock t-score">0.00</p>' +
+      '<p class="pill pill--sm split-col__off" hidden></p>' +
+      '<p class="split-col__runs"></p>' +
+      '<p class="split-col__total t-score"></p>';
+    col.querySelector(".split-col__name").textContent = p.name;
+    splitLanes.set(p.slot, { el: col, runAt: null });
+    return col;
+  });
+  lanes.replaceChildren(...cols);
+}
+
+function setText(el, text) {
+  if (el.textContent !== text) el.textContent = text;
+}
+
+// One lane from the server's view of that player (every snapshot).
+function paintLane(p, r) {
+  const lane = splitLanes.get(p.slot);
+  if (!lane) return;
+  const { el } = lane;
+  const reveal = r.stage === "reveal";
+  const leg = reveal ? p.legs[r.leg] : null;
+  // Keep the screen's own clock in step with the server's view of the run.
+  lane.runAt = r.stage === "run" && p.running ? performance.now() - (p.runForMs ?? 0) : null;
+  const shown = reveal ? leg : p.ms === null ? null : { ms: p.ms, error: p.error };
+  el.classList.toggle("is-running", lane.runAt !== null);
+  el.classList.toggle("is-locked", p.locked && r.stage === "run");
+  if (lane.runAt === null) setText(el.querySelector(".split-col__clock"), shown ? fmt(shown.ms) : reveal ? "MISS" : "–");
+  const off = el.querySelector(".split-col__off");
+  off.hidden = !shown;
+  if (shown) {
+    setText(off, signed(shown.ms, r.targetMs));
+    off.dataset.level = errorLevel(shown.error);
+  }
+  const runs = r.stage === "run" ? (p.locked ? "LOCKED IN" : p.runs ? `RUN ${p.runs}` : "NOT STARTED") : "";
+  setText(el.querySelector(".split-col__runs"), runs);
+  setText(el.querySelector(".split-col__total"), r.leg > 0 || reveal ? `TOTAL ${fmt(p.total)}` : "");
+}
+
+function tickSplitClocks() {
+  splitFrame = 0;
+  let any = false;
+  const now = performance.now();
+  for (const lane of splitLanes.values()) {
+    if (lane.runAt === null) continue;
+    any = true;
+    setText(lane.el.querySelector(".split-col__clock"), fmt(now - lane.runAt));
+  }
+  if (any && !$("split").hidden) splitFrame = requestAnimationFrame(tickSplitClocks);
+}
+
+function startSplitClocks() {
+  if (!splitFrame) splitFrame = requestAnimationFrame(tickSplitClocks);
+}
+
+function renderSplit(r) {
+  const running = r.phase === "countdown" || r.phase === "playing";
+  const showCountdown = r.phase === "countdown";
+  const showSplit = r.phase === "playing";
+  const showResults = r.phase === "results";
+  $("overlay").hidden = !running && !showResults;
+  $("countdown").hidden = !showCountdown;
+  $("battle").hidden = true;
+  $("snake").hidden = true;
+  $("lights").hidden = true;
+  $("split").hidden = !showSplit;
+  $("results").hidden = !showResults;
+  showResultsCard(r, showResults);
+  if (showCountdown) {
+    $("cd-game").textContent = GAME_NAMES.split;
+    $("cd-rule").textContent = COUNTDOWN_RULES.split;
+    $("cd-round").textContent = r.number;
+    // Round 1's target is already known: show it big, the 3-2-1 comes with the round.
+    $("cd-number").textContent = fmt(r.targetMs);
+    $("cd-rule").textContent = `ROUND 1 OF ${r.legs}: STOP THE CLOCK AT ${fmt(r.targetMs)}. NUMBERS HIDDEN ON THE PHONES.`;
+  }
+  if (!showSplit) return;
+
+  buildSplitLanes(r);
+  splitTarget = r.targetMs;
+  setText($("split-round"), `ROUND ${r.leg + 1} OF ${r.legs} · SPLIT SECOND`);
+  setText($("split-target"), `STOP AT ${fmt(r.targetMs)}`);
+  // Before each window: the target alone for a moment, then 3-2-1.
+  const setLeft = Math.ceil(r.setInMs / 1000);
+  const timer =
+    r.stage === "run" ? String(Math.ceil(r.endsInMs / 1000)) : r.stage === "set" ? (setLeft > 3 ? "READY" : String(Math.max(1, setLeft))) : "TIME!";
+  setText($("split-timer"), timer);
+  const banner = $("split-banner");
+  const last = r.leg + 1 >= r.legs;
+  const bannerText =
+    r.stage === "set"
+      ? `ROUND ${r.leg + 1} OF ${r.legs} · THE TARGET IS ${fmt(r.targetMs)}`
+      : r.stage === "reveal"
+        ? last
+          ? "THE LAST ROUND'S TIMES · RESULTS NEXT"
+          : "THE TIMES · TOTALS SO FAR"
+        : "";
+  banner.hidden = !bannerText;
+  setText(banner, bannerText);
+  $("split").dataset.stage = r.stage;
+  for (const p of r.players) paintLane(p, r);
+  startSplitClocks();
+}
+
+// A run starting or stopping, or a lock, the moment a phone sends it.
+function onSplit(msg) {
+  const lane = splitLanes.get(msg.slot);
+  if (!lane) return;
+  if (msg.event === "start") {
+    lane.runAt = performance.now();
+    lane.el.classList.add("is-running");
+    lane.el.querySelector(".split-col__off").hidden = true;
+    setText(lane.el.querySelector(".split-col__runs"), `RUN ${msg.runs}`);
+    startSplitClocks();
+    return;
+  }
+  lane.runAt = null;
+  lane.el.classList.remove("is-running");
+  if (msg.ms !== null) {
+    // The phone's own time replaces the screen's: that's the one that counts.
+    setText(lane.el.querySelector(".split-col__clock"), fmt(msg.ms));
+    const off = lane.el.querySelector(".split-col__off");
+    off.hidden = false;
+    setText(off, signed(msg.ms, splitTarget));
+    off.dataset.level = errorLevel(msg.error ?? 0);
+  }
+  if (msg.locked) {
+    lane.el.classList.add("is-locked");
+    setText(lane.el.querySelector(".split-col__runs"), "LOCKED IN");
+  }
+}
+
+// ---------- Rounds: LIGHTS OUT ----------
+// The big gantry runs on the same schedule as the phones. The server is this laptop, so a server
+// time converts straight to this page's clock.
+const lightsLanes = new Map(); // slot -> lane element
+let lightsSchedule = null; // { lightTimes, outAt } in server time
+let lightsFrame = 0;
+const serverToLocal = (t) => performance.now() + (t - Date.now());
+
+function paintBigGantry(on) {
+  $("lights-gantry")
+    .querySelectorAll(".gantry__light")
+    .forEach((bulb, i) => bulb.classList.toggle("is-on", i < on));
+}
+
+function tickGantry() {
+  lightsFrame = 0;
+  if (!lightsSchedule || $("lights").hidden) return;
+  const now = performance.now();
+  const out = now >= serverToLocal(lightsSchedule.outAt);
+  const on = lightsSchedule.lightTimes.filter((t) => serverToLocal(t) <= now).length;
+  paintBigGantry(out ? 0 : on);
+  if (!out) lightsFrame = requestAnimationFrame(tickGantry);
+}
+
+function buildLightsLanes(r) {
+  const key = `${r.number}:${r.players.map((p) => `${p.slot}${p.name}`).join(",")}`;
+  const lanes = $("lights-lanes");
+  if (lanes.dataset.key === key) return;
+  lanes.dataset.key = key;
+  lightsLanes.clear();
+  lanes.replaceChildren(
+    ...r.players.map((p) => {
+      const col = document.createElement("article");
+      col.className = "split-col lights-col";
+      col.dataset.color = p.color;
+      col.innerHTML =
+        '<p class="split-col__name"></p><p class="split-col__clock t-score">–</p>' +
+        '<p class="pill pill--sm split-col__off" hidden></p><p class="split-col__total t-score"></p>';
+      col.querySelector(".split-col__name").textContent = p.name;
+      lightsLanes.set(p.slot, col);
+      return col;
+    })
+  );
+}
+
+// A reaction on a lane: the lane fills in the player's colour; a jump start or no tap says so in red.
+function paintReaction(col, leg) {
+  const clock = col.querySelector(".split-col__clock");
+  const off = col.querySelector(".split-col__off");
+  if (!leg) {
+    setText(clock, "–");
+    off.hidden = true;
+    return;
+  }
+  setText(clock, leg.jump || leg.ms === null ? "–" : fmtReaction(leg.ms));
+  off.hidden = !(leg.jump || leg.ms === null);
+  if (!off.hidden) {
+    setText(off, lightsLegText(leg));
+    off.dataset.level = "bad";
+  }
+  col.classList.toggle("is-running", !leg.jump && leg.ms !== null);
+}
+
+function renderLights(r) {
+  const running = r.phase === "countdown" || r.phase === "playing";
+  const showCountdown = r.phase === "countdown";
+  const showLights = r.phase === "playing";
+  const showResults = r.phase === "results";
+  $("overlay").hidden = !running && !showResults;
+  $("countdown").hidden = !showCountdown;
+  $("battle").hidden = true;
+  $("snake").hidden = true;
+  $("split").hidden = true;
+  $("lights").hidden = !showLights;
+  $("results").hidden = !showResults;
+  showResultsCard(r, showResults);
+  if (showCountdown) {
+    $("cd-game").textContent = GAME_NAMES.lights;
+    $("cd-rule").textContent = COUNTDOWN_RULES.lights;
+    $("cd-round").textContent = r.number;
+    $("cd-number").textContent = Math.max(1, Math.ceil(r.startsInMs / 1000));
+  }
+  if (!showLights) return;
+  buildLightsLanes(r);
+  setText($("lights-round"), `START ${r.leg + 1} OF ${r.legs} · LIGHTS OUT`);
+  const status =
+    r.stage === "grid" ? "WATCH THE LIGHTS" : r.stage === "go" ? "LIGHTS OUT!" : r.leg + 1 >= r.legs ? "RESULTS NEXT" : "TOTALS SO FAR";
+  setText($("lights-status"), status);
+  if ((r.stage === "grid" || r.stage === "go") && r.outAt) {
+    lightsSchedule = { lightTimes: r.lightTimes, outAt: r.outAt };
+    if (!lightsFrame) lightsFrame = requestAnimationFrame(tickGantry);
+  } else {
+    lightsSchedule = null;
+    paintBigGantry(0);
+  }
+  for (const p of r.players) {
+    const col = lightsLanes.get(p.slot);
+    if (!col) continue;
+    const leg = p.legs[r.leg];
+    if (r.stage === "grid" && !p.pressed) {
+      paintReaction(col, null);
+      col.classList.remove("is-running");
+    } else if (leg) {
+      paintReaction(col, leg);
+    }
+    setText(col.querySelector(".split-col__total"), r.leg > 0 || r.stage === "reveal" ? `TOTAL ${fmtReaction(p.total)}` : "");
+  }
+}
+
+// A tap the moment it arrives: the reaction goes straight up on that player's lane.
+function onLightsTap(msg) {
+  const col = lightsLanes.get(msg.slot);
+  if (col) paintReaction(col, { ms: msg.ms, jump: msg.jump });
 }
 
 function onArena(frame) {
@@ -516,6 +835,8 @@ function connect() {
       renderRound(msg.round);
     } else if (msg.t === "bar") setLane(msg.slot, msg.level, msg.full);
     else if (msg.t === "arena") onArena(msg);
+    else if (msg.t === "split") onSplit(msg);
+    else if (msg.t === "lights") onLightsTap(msg);
     else if (msg.t === "tap") flashTap(msg.slot, msg.taps);
     else if (msg.t === "join") renderJoin(msg);
     else if (msg.t === "notice") showNotice(msg.message);

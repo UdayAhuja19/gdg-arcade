@@ -37,9 +37,9 @@ const foodCells = (arena) => {
 };
 const causes = (deaths) => Object.fromEntries(deaths.map((d) => [d.slot, d.cause]));
 
-test("the four spawns are on the board, apart, and turned 180° from each other", () => {
+test("the five spawns are on the board and apart, and the corners are turned 180° from each other", () => {
   const seen = new Set();
-  for (let slot = 0; slot < 4; slot += 1) {
+  for (let slot = 0; slot < 5; slot += 1) {
     const { body } = spawn(slot);
     assert.equal(body.length, START_LENGTH);
     for (const c of body) {
@@ -53,12 +53,20 @@ test("the four spawns are on the board, apart, and turned 180° from each other"
   assert.deepEqual(spawn(0).body.map(turned), spawn(2).body);
   assert.deepEqual(spawn(1).body.map(turned), spawn(3).body);
   assert.deepEqual(
-    [0, 1, 2, 3].map((s) => spawn(s).dir),
-    ["right", "down", "left", "up"]
+    [0, 1, 2, 3, 4].map((s) => spawn(s).dir),
+    ["right", "down", "left", "up", "down"]
   );
   // Each snake's head is in front of its body.
   assert.deepEqual(spawn(0).body[0], { x: 6, y: 3 });
   assert.deepEqual(spawn(1).body[0], { x: 28, y: 6 });
+  assert.deepEqual(spawn(4).body[0], { x: 16, y: 6 });
+});
+
+test("with five snakes, nobody who goes straight crashes in the first second", () => {
+  // At the slowest speed (7 steps a second), so players have time to steer after GO.
+  const arena = createArena([0, 1, 2, 3, 4], { random: farFood });
+  for (let i = 0; i < START_STEPS_PER_SEC; i += 1) assert.deepEqual(arena.step().deaths, []);
+  assert.equal(arena.alive, 5);
 });
 
 test("snakes move straight, one cell a step, keeping their length", () => {
