@@ -58,6 +58,30 @@
   text-align: left;
 }
 
+/* "A player with that name already exists. Is that you?" */
+.gate__confirm {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  background: var(--paper);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-inner);
+}
+
+.gate__confirm-text {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.gate__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .gate__peek-a {
   width: 120px;
   height: 120px;

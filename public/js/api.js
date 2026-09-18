@@ -24,6 +24,7 @@ async function request(method, url, { body, headers } = {}) {
 
 const serverApi = {
   createPlayer: (name) => request("POST", "api/players", { body: { name } }).then((d) => d.player),
+  playerExists: (name) => request("GET", `api/players/exists?name=${encodeURIComponent(name)}`).then((d) => d.exists),
   boards: () => request("GET", "api/leaderboard").then((d) => d.boards),
   board: (game, playerId) =>
     request("GET", `api/leaderboard?game=${encodeURIComponent(game)}${playerId ? `&playerId=${playerId}` : ""}`),

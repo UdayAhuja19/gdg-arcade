@@ -29,11 +29,14 @@ function load() {
   if (!oldSavesCleared) clearOldSaves();
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (data && typeof data.best === "object" && data.best !== null) return data;
+    if (data && typeof data.best === "object" && data.best !== null) {
+      data.players ??= {};
+      return data;
+    }
   } catch {
     // Unreadable or blocked storage: start fresh.
   }
-  return { best: {} };
+  return { best: {}, players: {} };
 }
 
 function save(data) {
@@ -67,7 +70,21 @@ export const localApi = {
   async createPlayer(rawName) {
     const result = normalizeName(rawName);
     if (result.error) throw new ApiError(422, result.error);
+    // Remember the name, like the server's players table, so a second person typing it gets asked.
+    const data = load();
+    if (!data.players[result.key]) {
+      data.players[result.key] = { name: result.name, at: Date.now() };
+      save(data);
+    }
     return { id: result.key, name: result.name };
+  },
+
+  // Has anyone on this device already used this name?
+  async playerExists(rawName) {
+    const result = normalizeName(rawName);
+    if (result.error) throw new ApiError(422, result.error);
+    const data = load();
+    return Boolean(data.players[result.key]) || Object.values(data.best).some((board) => result.key in board);
   },
 
   async boards() {

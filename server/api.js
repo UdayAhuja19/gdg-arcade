@@ -129,6 +129,14 @@ export function createApi() {
     res.json({ player: rows[0] });
   });
 
+  // Is someone already playing under this name? The home page asks before it reuses a name.
+  api.get("/players/exists", async (req, res) => {
+    const result = normalizeName(req.query.name);
+    if (result.error) throw new ApiError(422, result.error);
+    const [rows] = await req.db.execute("SELECT id FROM players WHERE name_key = ? LIMIT 1", [result.key]);
+    res.json({ exists: rows.length > 0 });
+  });
+
   api.get("/leaderboard", async (req, res) => {
     if (req.query.game) {
       const game = requireGame(req.query.game);

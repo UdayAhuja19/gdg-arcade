@@ -43,6 +43,18 @@ test("names follow the same rules as the server", async () => {
   await assert.rejects(localApi.createPlayer("f.u.c.k"), { status: 422 });
 });
 
+test("a name already in use is reported, in any case, so the home page can ask who's playing", async () => {
+  assert.equal(await localApi.playerExists("Sara K"), false);
+  await localApi.createPlayer("Sara K");
+  assert.equal(await localApi.playerExists("sara   k"), true);
+  assert.equal(await localApi.playerExists("SARA"), false);
+  await assert.rejects(localApi.playerExists("x"), { status: 422 });
+  // A name with saved scores counts too, even if the players list was lost.
+  await play("Echo", "dino", 50);
+  delete JSON.parse(store.get(STORAGE_KEY)).players;
+  assert.equal(await localApi.playerExists("echo"), true);
+});
+
 test("first score is a new best at rank 1, a lower score keeps the best", async () => {
   const first = await play("Sara K", "dino", 120);
   assert.equal(first.isNewBest, true);

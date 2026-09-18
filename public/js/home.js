@@ -12,6 +12,10 @@ const playerBar = document.getElementById("player-bar");
 const playerPill = document.getElementById("player-pill");
 const tilesEl = document.getElementById("tiles");
 const banner = document.getElementById("db-banner");
+const confirmBox = document.getElementById("gate-confirm");
+const confirmText = document.getElementById("gate-confirm-text");
+const confirmYes = document.getElementById("gate-confirm-yes");
+const confirmNo = document.getElementById("gate-confirm-no");
 
 const BOARD_REFRESH_MS = 10_000;
 const PEEK_COLOR = { green: "green", yellow: "yellow", blue: "blue", red: "red", ink: "blue" };
@@ -19,7 +23,23 @@ const PEEK_COLOR = { green: "green", yellow: "yellow", blue: "blue", red: "red",
 const games = GAME_LIST;
 const boardLists = new Map();
 
+// A name someone else may already be using: we ask "are you that player?" before reusing it.
+let pendingName = null;
+
+function hideConfirm() {
+  pendingName = null;
+  confirmBox.hidden = true;
+}
+
+function showConfirm(check) {
+  pendingName = check;
+  confirmText.textContent = `A PLAYER CALLED ${check.name} ALREADY EXISTS. ARE YOU THAT PLAYER? IF NOT, PICK A NEW NAME, LIKE YOUR NAME + SURNAME INITIAL.`;
+  confirmBox.hidden = false;
+  confirmYes.focus();
+}
+
 function showPlayer() {
+  hideConfirm();
   const player = getPlayer();
   gate.hidden = Boolean(player);
   playerBar.hidden = !player;
@@ -38,24 +58,26 @@ function setError(message) {
   input.setAttribute("aria-invalid", message ? "true" : "false");
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const check = checkName(input.value);
-  if (check.error) {
-    setError(check.error);
-    input.focus();
-    return;
-  }
-  setError("");
-  const button = form.querySelector("button");
+// Joins as `check` (a normalized name). Unless the player already said "yes, that's me", a name
+// that's taken stops here and asks first.
+async function enter(check, { confirmed }) {
+  const button = form.querySelector("button[type=submit]");
   button.disabled = true;
+  // Only lock YES while joining, so it can take focus when the question first appears.
+  confirmYes.disabled = confirmed;
   try {
-    const player = await api.createPlayer(input.value);
+    if (!confirmed && (await api.playerExists(check.name))) {
+      showConfirm(check);
+      return;
+    }
+    hideConfirm();
+    const player = await api.createPlayer(check.name);
     setPlayer({ id: player.id, name: player.name });
     banner.hidden = true;
   } catch (err) {
     if (err instanceof ApiError && (err.status === 503 || err.status === 0)) {
       // Database down: let them play anyway, without saving.
+      hideConfirm();
       setPlayer({ id: null, name: check.name });
       banner.hidden = false;
     } else {
@@ -65,12 +87,42 @@ form.addEventListener("submit", async (e) => {
     }
   } finally {
     button.disabled = false;
+    confirmYes.disabled = false;
   }
   showPlayer();
   document.getElementById("library").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const check = checkName(input.value);
+  if (check.error) {
+    setError(check.error);
+    input.focus();
+    return;
+  }
+  setError("");
+  // Pressing START again on a name we already asked about: back to the question.
+  if (pendingName?.key === check.key) {
+    confirmYes.focus();
+    return;
+  }
+  enter(check, { confirmed: false });
+});
+
+confirmYes.addEventListener("click", () => {
+  if (pendingName) enter(pendingName, { confirmed: true });
+});
+
+confirmNo.addEventListener("click", () => {
+  hideConfirm();
+  input.value = "";
+  input.focus();
 });
 
 input.addEventListener("input", () => {
+  // Typing a different name means the question no longer applies.
+  if (pendingName) hideConfirm();
   if (error.textContent) setError("");
 });
 

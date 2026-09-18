@@ -52,6 +52,15 @@ needsDb("the same name in any case is one player", async () => {
   assert.equal(b.body.player.id, a.body.player.id);
 });
 
+needsDb("a name in use is reported, in any case", async () => {
+  const exists = async (name) => (await call("GET", `/api/players/exists?name=${encodeURIComponent(name)}`)).body.exists;
+  assert.equal(await exists("Taken Name"), false);
+  await call("POST", "/api/players", { name: "Taken Name" });
+  assert.equal(await exists("  taken   NAME"), true);
+  assert.equal(await exists("Taken"), false);
+  assert.equal((await call("GET", "/api/players/exists?name=x")).status, 422);
+});
+
 needsDb("bad names are refused", async () => {
   assert.equal((await call("POST", "/api/players", { name: "x" })).status, 422);
   assert.equal((await call("POST", "/api/players", { name: "f.u.c.k" })).status, 422);
