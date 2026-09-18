@@ -1122,6 +1122,70 @@ body.phone.in-game {
   background: var(--paper);
 }
 
+/* Bottom right, always: the club's socials. Yellow so nobody mistakes it for SCAN TO PLAY. */
+.socials-card {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: clamp(10px, 1vw, 16px);
+  padding: 8px 8px 8px clamp(14px, 1.2vw, 20px);
+  background: var(--yellow);
+  border: var(--stroke) solid var(--ink);
+  border-radius: var(--radius-inner);
+  box-shadow: var(--shadow);
+  isolation: isolate;
+}
+
+.socials-card__peek {
+  position: absolute;
+  z-index: -1;
+  top: -22px;
+  left: -20px;
+  width: 52px;
+  height: 52px;
+  color: var(--red);
+  rotate: -12deg;
+}
+
+.socials-card__text {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.socials-card__title {
+  font-size: clamp(18px, min(1.5vw, 2.8vh), 28px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.socials-card__sub {
+  font-size: clamp(12px, min(0.95vw, 1.8vh), 17px);
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.socials-card__apps {
+  font-size: clamp(9px, min(0.7vw, 1.3vh), 12px);
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* The white quiet zone around the code is part of the tile, so it scans against the yellow */
+.socials-card__qr {
+  width: clamp(84px, 12vh, 140px);
+  aspect-ratio: 1;
+  padding: 10px;
+  background: var(--paper);
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: 10px;
+}
+
 /* LIGHTS OUT: the big gantry above a lane per player */
 .lights {
   display: grid;

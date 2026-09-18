@@ -31,6 +31,20 @@
       "port": 3101
     },
     {
+      "name": "gdg-resources",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8010",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "../gdg-resources"
+      ],
+      "port": 8010
+    },
+    {
       "name": "party-lan",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
