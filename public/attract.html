@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDG Arcade · Attract screen</title>
+  <meta name="description" content="Looping booth screen: the games we have and the socials QR code.">
+  <link rel="icon" href="assets/logo-mark.svg">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <style>
+    /* The whole screen is drawn on a fixed 1920x1080 stage that is scaled to fit the TV,
+       so every size below is in real 1080p pixels (no vw/vh). */
+    html,
+    body,
+    * {
+      cursor: none !important;
+    }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      transform: translate(-50%, -50%) scale(var(--fit, 1));
+      isolation: isolate;
+    }
+
+    /* ---------- Fixed chrome: header pill, logo, drifting shapes, marquee, socials card ---------- */
+    .chrome-top {
+      position: absolute;
+      z-index: 5;
+      top: 40px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .chrome-top .pill--header {
+      font-size: 26px;
+    }
+
+    .chrome-logo {
+      position: absolute;
+      z-index: 5;
+      top: 38px;
+      right: 60px;
+      width: 104px;
+    }
+
+    .bg-shape {
+      position: absolute;
+      z-index: -1;
+    }
+
+    .bg-shape--flower { top: -70px; left: -70px; width: 240px; height: 240px; }
+    .bg-shape--half { top: 470px; left: -80px; width: 190px; height: 190px; }
+    .bg-shape--triangle { top: 250px; right: -60px; width: 190px; height: 190px; }
+    .bg-shape--circle { bottom: -70px; left: -60px; width: 180px; height: 180px; }
+
+    .chrome-marquee {
+      position: absolute;
+      z-index: 4;
+      left: 60px;
+      bottom: 62px;
+      width: 1250px;
+      transition: width 500ms var(--ease-spring);
+    }
+
+    .chrome-marquee .marquee__track {
+      animation-duration: 40s;
+    }
+
+    .chrome-marquee .marquee__track .pill {
+      font-size: 26px;
+    }
+
+    body[data-scene="join"] .chrome-marquee {
+      width: 1800px;
+    }
+
+    /* The yellow socials card from the party big screen (party/css/party.css .socials-card), at TV size */
+    .socials-card {
+      position: relative;
+      display: flex;
+      flex: none;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 10px 10px 24px;
+      background: var(--yellow);
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-inner);
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+
+    .socials-card__peek {
+      position: absolute;
+      z-index: -1;
+      bottom: -10px;
+      left: -34px;
+      width: 66px;
+      height: 66px;
+      color: var(--red);
+      rotate: -12deg;
+    }
+
+    .socials-card__text {
+      display: grid;
+      gap: 6px;
+      text-align: right;
+    }
+
+    .socials-card__title {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .socials-card__sub {
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .socials-card__apps {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    /* The white quiet zone around the code is part of the tile, so it scans against the yellow */
+    .socials-card__qr {
+      width: 164px;
+      aspect-ratio: 1;
+      padding: 12px;
+      background: var(--paper);
+      border: var(--stroke-thin) solid var(--ink);
+      border-radius: 10px;
+    }
+
+    .mini-socials {
+      position: absolute;
+      z-index: 6;
+      right: 60px;
+      bottom: 44px;
+      transition: translate 520ms var(--ease-spring);
+    }
+
+    body[data-scene="join"] .mini-socials {
+      translate: 0 340px;
+      transition-timing-function: cubic-bezier(0.55, 0, 0.75, 0);
+      transition-duration: 380ms;
+    }
+
+    /* ---------- Scenes ---------- */
+    .scene {
+      position: absolute;
+      /* Content stays above the socials card (its top is at y 846) */
+      inset: 126px 64px 250px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      visibility: hidden;
+    }
+
+    .scene.is-in,
+    .scene.is-out {
+      visibility: visible;
+    }
+
+    .scene.is-in {
+      animation: scene-in 640ms var(--ease-spring) both;
+    }
+
+    .scene.is-out {
+      animation: scene-out 420ms cubic-bezier(0.55, 0, 0.75, 0) both;
+    }
+
+    @keyframes scene-in {
+      from { translate: 2100px 0; }
+      to { translate: 0 0; }
+    }
+
+    @keyframes scene-out {
+      from { translate: 0 0; }
+      to { translate: -2100px 0; }
+    }
+
+    /* Pieces pop in on a spring, one after another (--d = delay in ms). Scale only, never opacity. */
+    .scene.is-in .pop {
+      animation: pop 460ms var(--ease-spring) both;
+      animation-delay: calc(280ms + var(--d, 0) * 1ms);
+    }
+
+    @keyframes pop {
+      from { scale: 0; }
+      to { scale: 1; }
+    }
+
+    .headline {
+      font-size: 100px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 0.9;
+      white-space: nowrap;
+    }
+
+    .subline {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .fill-red { background: var(--red); }
+    .fill-blue { background: var(--blue); }
+    .fill-yellow { background: var(--yellow); }
+    .fill-green { background: var(--green); }
+    .fill-ink { background: var(--ink); color: var(--paper); }
+
+    /* 1. Title */
+    .title__word {
+      font-size: 280px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.85;
+    }
+
+    .title__row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .title__play {
+      font-size: 92px;
+      padding: 0.2em 0.62em 0.16em;
+    }
+
+    .title__prize {
+      font-size: 44px;
+      font-weight: 900;
+      padding: 0.5em 0.9em 0.42em;
+      rotate: 6deg;
+    }
+
+    .title__arts {
+      display: flex;
+      gap: 26px;
+    }
+
+    .art-tile {
+      width: 224px;
+      aspect-ratio: 240 / 150;
+      overflow: hidden;
+      background: var(--paper);
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-inner);
+      box-shadow: var(--shadow);
+    }
+
+    .art-tile img {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 2. Arcade games */
+    .arcade__cards {
+      display: grid;
+      grid-template-columns: repeat(5, 336px);
+      gap: 28px;
+    }
+
+    .game-card {
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      padding: 16px;
+      transition:
+        translate 300ms var(--ease-spring),
+        box-shadow 300ms var(--ease-spring);
+    }
+
+    .game-card.is-lit {
+      translate: 0 -16px;
+      box-shadow: 0 16px 0 var(--ink);
+    }
+
+    .game-card .art-tile {
+      width: 100%;
+      box-shadow: none;
+    }
+
+    .game-card__name {
+      justify-self: start;
+      font-size: 26px;
+      font-weight: 900;
+      padding: 0.42em 0.8em 0.36em;
+      box-shadow: 0 4px 0 var(--ink);
+    }
+
+    .game-card__blurb {
+      min-height: 2.4em;
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .game-card__top {
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    .game-card .board__row {
+      min-height: 50px;
+      padding-right: 16px;
+    }
+
+    .game-card .board__rank {
+      width: 40px;
+      height: 40px;
+      font-size: 19px;
+    }
+
+    .game-card .board__name {
+      font-size: 20px;
+    }
+
+    .game-card .board__score {
+      font-size: 22px;
+    }
+
+    /* 3. Motion games */
+    .motion__sub {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+    }
+
+    .motion__sub .pill {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .motion__grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      width: 1800px;
+    }
+
+    .move-card {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      align-items: center;
+      gap: 22px;
+      width: 430px;
+      min-height: 186px;
+      padding: 22px 24px;
+    }
+
+    .move-card__shape {
+      width: 92px;
+      height: 92px;
+    }
+
+    .move-card__name {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+    }
+
+    .move-card__how {
+      margin-top: 10px;
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .shape--ink { color: var(--ink); }
+
+    /* 4. Party games */
+    .party__sub {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .party__dots {
+      display: flex;
+      gap: 12px;
+    }
+
+    .party__dot {
+      width: 46px;
+      height: 46px;
+      border: var(--stroke) solid var(--ink);
+      border-radius: 50%;
+    }
+
+    .party__cards {
+      display: grid;
+      grid-template-columns: repeat(3, 560px);
+      gap: 36px;
+    }
+
+    .party-card {
+      display: grid;
+      gap: 18px;
+      padding: 24px;
+    }
+
+    .party-card__show {
+      display: grid;
+      place-items: center;
+      height: 220px;
+      background: var(--paper);
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-inner);
+      overflow: hidden;
+    }
+
+    .party-card__name {
+      font-size: 50px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+    }
+
+    .party-card__how {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    /* MASH BATTLE: three bars racing */
+    .race {
+      display: grid;
+      gap: 16px;
+      width: 440px;
+    }
+
+    .race__lane {
+      height: 44px;
+      padding: 5px;
+      background: var(--paper);
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-pill);
+    }
+
+    .race__bar {
+      width: 12%;
+      height: 100%;
+      border: var(--stroke-thin) solid var(--ink);
+      border-radius: var(--radius-pill);
+    }
+
+    .scene.is-in .race__bar {
+      animation: race 3.4s var(--ease-out) infinite;
+    }
+
+    .race__lane:nth-child(2) .race__bar { animation-duration: 3.9s; }
+    .race__lane:nth-child(3) .race__bar { animation-duration: 4.6s; }
+
+    @keyframes race {
+      0% { width: 12%; }
+      80%, 100% { width: 100%; }
+    }
+
+    /* LIGHTS OUT: five reds come on one by one, then all go out */
+    .gantry {
+      display: flex;
+      gap: 18px;
+      padding: 22px 26px;
+      background: var(--ink);
+      border-radius: var(--radius-inner);
+    }
+
+    .gantry__light {
+      width: 62px;
+      height: 62px;
+      background: var(--muted);
+      border: var(--stroke) solid var(--paper);
+      border-radius: 50%;
+    }
+
+    /* One 5s cycle: a light comes on every 0.6s, then all go out together at 3.6s */
+    .scene.is-in .gantry__light {
+      animation-duration: 5s;
+      animation-timing-function: steps(1, end);
+      animation-iteration-count: infinite;
+    }
+
+    .scene.is-in .gantry__light:nth-child(1) { animation-name: light-1; }
+    .scene.is-in .gantry__light:nth-child(2) { animation-name: light-2; }
+    .scene.is-in .gantry__light:nth-child(3) { animation-name: light-3; }
+    .scene.is-in .gantry__light:nth-child(4) { animation-name: light-4; }
+    .scene.is-in .gantry__light:nth-child(5) { animation-name: light-5; }
+
+    @keyframes light-1 { 0% { background: var(--red); } 72%, 100% { background: var(--muted); } }
+    @keyframes light-2 { 0% { background: var(--muted); } 12% { background: var(--red); } 72%, 100% { background: var(--muted); } }
+    @keyframes light-3 { 0% { background: var(--muted); } 24% { background: var(--red); } 72%, 100% { background: var(--muted); } }
+    @keyframes light-4 { 0% { background: var(--muted); } 36% { background: var(--red); } 72%, 100% { background: var(--muted); } }
+    @keyframes light-5 { 0% { background: var(--muted); } 48% { background: var(--red); } 72%, 100% { background: var(--muted); } }
+
+    /* SPLIT SECOND: a stopwatch that stops just short of the target */
+    .clock {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+
+    .clock__time {
+      font-size: 120px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.04em;
+      line-height: 0.9;
+    }
+
+    .clock__target {
+      font-size: 22px;
+      font-weight: 900;
+      padding: 0.45em 0.9em 0.38em;
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    /* 5. The final */
+    .final__row {
+      display: grid;
+      grid-template-columns: repeat(5, 300px);
+      gap: 64px;
+      position: relative;
+    }
+
+    .champ {
+      display: grid;
+      justify-items: center;
+      gap: 16px;
+      padding: 22px 18px 24px;
+      text-align: center;
+    }
+
+    .champ__game {
+      font-size: 22px;
+      font-weight: 900;
+      padding: 0.45em 0.85em 0.38em;
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    .champ__rank {
+      display: grid;
+      place-items: center;
+      width: 110px;
+      height: 110px;
+      font-size: 50px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      background: var(--rank-1);
+      border: var(--stroke) solid var(--ink);
+      border-radius: 50%;
+      box-shadow: var(--shadow);
+    }
+
+    .champ__name {
+      max-width: 100%;
+      overflow: hidden;
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .champ__name.is-open {
+      color: var(--muted);
+    }
+
+    .vs {
+      position: absolute;
+      top: 118px;
+      font-size: 26px;
+      font-weight: 900;
+      padding: 0.42em 0.6em 0.36em;
+      translate: -50% 0;
+    }
+
+    .final__prize {
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      padding: 0.26em 0.8em 0.22em;
+    }
+
+    /* 6. Join our club */
+    .join__row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 56px;
+      width: 1792px;
+    }
+
+    .join__left {
+      justify-self: end;
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+      text-align: right;
+    }
+
+    .join__right {
+      justify-self: start;
+      display: grid;
+      gap: 18px;
+    }
+
+    .join__right .pill {
+      justify-self: start;
+      font-size: 32px;
+      font-weight: 900;
+    }
+
+    .join__card {
+      position: relative;
+      padding: 26px;
+      background: var(--yellow);
+      border: 4px solid var(--ink);
+      border-radius: var(--radius-card);
+      box-shadow: 0 7px 0 var(--ink);
+    }
+
+    .join__qr {
+      width: 440px;
+      aspect-ratio: 1;
+      padding: 26px;
+      background: var(--paper);
+      border: var(--stroke) solid var(--ink);
+      border-radius: var(--radius-inner);
+    }
+
+    .join__scan {
+      position: absolute;
+      top: -30px;
+      right: -64px;
+      font-size: 34px;
+      font-weight: 900;
+      rotate: 8deg;
+    }
+
+    /* ---------- Reduced motion: one still screen with everything and the QR ---------- */
+    body[data-scene="join"] .scene[data-scene="join"] {
+      bottom: 150px;
+    }
+
+    .scene--still {
+      inset: 140px 64px 150px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 64px;
+    }
+
+    .still__left {
+      display: grid;
+      gap: 26px;
+    }
+
+    .still__title {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+    }
+
+    .still__title .title__word {
+      font-size: 170px;
+    }
+
+    .still__title .pill {
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .still__group {
+      display: grid;
+      gap: 12px;
+    }
+
+    .still__group h2 {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .still__pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .still__pills .pill {
+      font-size: 22px;
+      font-weight: 800;
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    .still__final {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+
+    .still__card {
+      display: grid;
+      justify-items: center;
+      gap: 16px;
+      padding: 30px;
+      text-align: center;
+      background: var(--yellow);
+      border: 4px solid var(--ink);
+      border-radius: var(--radius-card);
+      box-shadow: 0 7px 0 var(--ink);
+    }
+
+    .still__card .join__qr {
+      width: 400px;
+    }
+
+    .still__card h2 {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .still__card p {
+      font-size: 24px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scene {
+        visibility: hidden !important;
+        animation: none !important;
+      }
+
+      .scene--still {
+        visibility: visible !important;
+      }
+
+      .mini-socials {
+        display: none;
+      }
+
+      .drift,
+      .marquee__track,
+      .scene * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body data-scene="title">
+  <div class="stage" id="stage">
+    <svg class="shape shape--yellow bg-shape bg-shape--flower drift drift--slow" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
+    <svg class="shape shape--blue bg-shape bg-shape--half drift drift--reverse" aria-hidden="true"><use href="assets/shapes.svg#half-circle"/></svg>
+    <svg class="shape shape--red bg-shape bg-shape--triangle drift" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
+    <svg class="shape shape--green bg-shape bg-shape--circle drift drift--slow drift--reverse" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg>
+
+    <header class="chrome-top">
+      <p class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</p>
+    </header>
+    <img class="chrome-logo" src="assets/logo-mark.svg" alt="GDG">
+
+    <!-- 1. Title -->
+    <section class="scene" data-scene="title" data-ms="7000" aria-label="Arcade">
+      <h1 class="title__word pop">&lt;ARCADE&gt;</h1>
+      <div class="title__row">
+        <span class="pill pill--xl pill--filled-yellow title__play pop" style="--d: 180">COME PLAY</span>
+        <span class="pill pill--filled-red title__prize pop" style="--d: 360">WIN TODAY'S PRIZE</span>
+      </div>
+      <div class="title__arts" id="title-arts"></div>
+    </section>
+
+    <!-- 2. Arcade games -->
+    <section class="scene" data-scene="arcade" data-ms="15000" aria-label="Arcade games">
+      <h2 class="headline pop">&lt;ARCADE GAMES&gt;</h2>
+      <div class="arcade__cards" id="arcade-cards"></div>
+    </section>
+
+    <!-- 3. Motion games -->
+    <section class="scene" data-scene="motion" data-ms="14000" aria-label="Motion games">
+      <h2 class="headline pop">&lt;MOTION GAMES&gt;</h2>
+      <div class="motion__sub">
+        <p class="subline pop" style="--d: 120">NO CONTROLLER. JUST YOU.</p>
+        <span class="pill pill--filled-yellow tilt-3 pop" style="--d: 260">SOLO</span>
+        <span class="pill pill--filled-blue tilt-4 pop" style="--d: 340">VERSUS</span>
+      </div>
+      <div class="motion__grid" id="motion-grid"></div>
+    </section>
+
+    <!-- 4. Party games -->
+    <section class="scene" data-scene="party" data-ms="11000" aria-label="Party games">
+      <h2 class="headline pop">&lt;PARTY GAMES&gt;</h2>
+      <div class="party__sub">
+        <p class="subline pop" style="--d: 120">UP TO 5 PLAYERS. JOIN WITH YOUR PHONE.</p>
+        <div class="party__dots" aria-hidden="true">
+          <span class="party__dot fill-red pop" style="--d: 260"></span>
+          <span class="party__dot fill-blue pop" style="--d: 320"></span>
+          <span class="party__dot fill-yellow pop" style="--d: 380"></span>
+          <span class="party__dot fill-green pop" style="--d: 440"></span>
+          <span class="party__dot fill-ink pop" style="--d: 500"></span>
+        </div>
+      </div>
+      <div class="party__cards">
+        <article class="card party-card pop" style="--d: 300">
+          <div class="party-card__show" aria-hidden="true">
+            <div class="race">
+              <div class="race__lane"><div class="race__bar fill-red"></div></div>
+              <div class="race__lane"><div class="race__bar fill-blue"></div></div>
+              <div class="race__lane"><div class="race__bar fill-green"></div></div>
+            </div>
+          </div>
+          <h3 class="party-card__name">MASH BATTLE</h3>
+          <p class="party-card__how">TAP AS FAST AS YOU CAN.</p>
+        </article>
+        <article class="card party-card pop" style="--d: 440">
+          <div class="party-card__show" aria-hidden="true">
+            <div class="gantry">
+              <span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span>
+            </div>
+          </div>
+          <h3 class="party-card__name">LIGHTS OUT</h3>
+          <p class="party-card__how">F1-STYLE REACTION TEST.</p>
+        </article>
+        <article class="card party-card pop" style="--d: 580">
+          <div class="party-card__show" aria-hidden="true">
+            <div class="clock">
+              <span class="clock__time" id="clock-time">0.00</span>
+              <span class="pill pill--filled-yellow clock__target">TARGET 3.00</span>
+            </div>
+          </div>
+          <h3 class="party-card__name">SPLIT SECOND</h3>
+          <p class="party-card__how">STOP THE CLOCK AT EXACTLY THE TARGET.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 5. The final -->
+    <section class="scene" data-scene="final" data-ms="9000" aria-label="The final">
+      <h2 class="headline pop">&lt;THE FINAL&gt;</h2>
+      <p class="subline pop" style="--d: 120">THE #1 FROM EVERY ARCADE GAME. ONE FINAL.</p>
+      <div class="final__row" id="final-row"></div>
+      <span class="pill pill--xl pill--filled-yellow final__prize pop" style="--d: 1100">PRIZE OF THE DAY</span>
+    </section>
+
+    <!-- 6. Join our club -->
+    <section class="scene" data-scene="join" data-ms="12000" aria-label="Join our club">
+      <h2 class="headline pop" style="font-size: 124px">&lt;JOIN OUR CLUB&gt;</h2>
+      <div class="join__row">
+        <p class="join__left pop" style="--d: 260">CHECK OUT<br>OUR SOCIALS</p>
+        <div class="join__card pop" style="--d: 120">
+          <img class="join__qr" src="assets/socials-qr.svg" alt="QR code for the GDG on Campus UOBD socials page">
+          <span class="pill pill--filled-red join__scan pop" style="--d: 700">SCAN ME!</span>
+        </div>
+        <div class="join__right">
+          <span class="pill pill--filled-green pop" style="--d: 360">WHATSAPP</span>
+          <span class="pill pill--filled-red pop" style="--d: 440">INSTAGRAM</span>
+          <span class="pill pill--filled-blue pop" style="--d: 520">LINKEDIN</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reduced motion: everything on one still screen -->
+    <section class="scene scene--still" aria-label="Arcade, games and socials">
+      <div class="still__left">
+        <div class="still__title">
+          <h1 class="title__word">&lt;ARCADE&gt;</h1>
+          <div class="still__pills">
+            <span class="pill pill--filled-yellow">COME PLAY</span>
+            <span class="pill pill--filled-red">WIN TODAY'S PRIZE</span>
+          </div>
+        </div>
+        <div class="still__group">
+          <h2>&lt;ARCADE GAMES&gt;</h2>
+          <div class="still__pills" id="still-arcade"></div>
+        </div>
+        <div class="still__group">
+          <h2>&lt;MOTION GAMES&gt; NO CONTROLLER. JUST YOU.</h2>
+          <div class="still__pills" id="still-motion"></div>
+        </div>
+        <div class="still__group">
+          <h2>&lt;PARTY GAMES&gt; UP TO 5 PHONES.</h2>
+          <div class="still__pills" id="still-party"></div>
+        </div>
+        <p class="still__final">&lt;THE FINAL&gt; THE #1 FROM EVERY ARCADE GAME PLAYS FOR TODAY'S PRIZE.</p>
+      </div>
+      <div class="still__card">
+        <h2>&lt;JOIN OUR CLUB&gt;</h2>
+        <img class="join__qr" src="assets/socials-qr.svg" alt="QR code for the GDG on Campus UOBD socials page">
+        <p>CHECK OUT OUR SOCIALS</p>
+        <p>WHATSAPP · INSTAGRAM · LINKEDIN</p>
+      </div>
+    </section>
+
+    <div class="marquee chrome-marquee" aria-hidden="true">
+      <div class="marquee__track" id="marquee-track"></div>
+    </div>
+
+    <aside class="socials-card mini-socials" aria-labelledby="socials-title">
+      <svg class="shape socials-card__peek" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
+      <div class="socials-card__text">
+        <h2 class="socials-card__title" id="socials-title">&lt;JOIN OUR CLUB&gt;</h2>
+        <p class="socials-card__sub">CHECK OUT OUR SOCIALS</p>
+        <p class="socials-card__apps">WHATSAPP · INSTAGRAM · LINKEDIN</p>
+      </div>
+      <img class="socials-card__qr" src="assets/socials-qr.svg" alt="QR code for the GDG on Campus UOBD socials page">
+    </aside>
+  </div>
+
+  <script type="module">
+    import { GAME_LIST } from "./js/shared/games.js";
+    import { api } from "./js/api.js";
+
+    const MOTION_GAMES = [
+      { name: "67 SPEED DUEL", how: "PUMP BOTH ARMS AS FAST AS YOU CAN.", color: "blue", shape: "flower" },
+      { name: "FRUIT NINJA", how: "SWIPE YOUR HANDS TO SLICE.", color: "green", shape: "triangle" },
+      { name: "RED LIGHT", how: "PUMP YOUR ARMS. FREEZE ON RED.", color: "red", shape: "circle" },
+      { name: "NEON RUNNER", how: "STEP, JUMP AND DUCK DOWN THE TRACK.", color: "yellow", shape: "capsule" },
+      { name: "HOLE IN THE WALL", how: "MATCH THE SHAPE BEFORE IT HITS YOU.", color: "ink", shape: "rounded-rect" },
+      { name: "RHYTHM PUNCH", how: "PUNCH THE TARGETS ON THE BEAT.", color: "red", shape: "half-circle" },
+      { name: "BALLOON POP", how: "POP THE BALLOONS WITH YOUR HANDS.", color: "blue", shape: "blob" },
+    ];
+    const PARTY_GAMES = ["MASH BATTLE", "LIGHTS OUT", "SPLIT SECOND"];
+
+    const $ = (id) => document.getElementById(id);
+    const el = (tag, className, text) => {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text != null) node.textContent = text;
+      return node;
+    };
+    const shape = (name, className) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", className);
+      svg.setAttribute("aria-hidden", "true");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", `assets/shapes.svg#${name}`);
+      svg.append(use);
+      return svg;
+    };
+    const pop = (node, delay) => {
+      node.classList.add("pop");
+      node.style.setProperty("--d", delay);
+      return node;
+    };
+    const artTile = (key, title) => {
+      const tile = el("div", "art-tile");
+      const img = el("img");
+      img.src = `assets/art/${key}.svg`;
+      img.alt = title;
+      tile.append(img);
+      return tile;
+    };
+
+    // Fit the 1920x1080 stage to whatever screen the TV laptop has.
+    const stage = $("stage");
+    const fit = () => stage.style.setProperty("--fit", Math.min(innerWidth / 1920, innerHeight / 1080));
+    addEventListener("resize", fit);
+    fit();
+
+    // ---------- Build the scenes from the real game list ----------
+    GAME_LIST.forEach((g, i) => $("title-arts").append(pop(artTile(g.key, g.title), 520 + i * 90)));
+
+    const boardLists = {};
+    const champNames = {};
+    GAME_LIST.forEach((g, i) => {
+      const card = pop(el("article", "card game-card"), 200 + i * 110);
+      card.dataset.game = g.key;
+      const name = el("h3", `pill game-card__name fill-${g.color}`, g.title);
+      const list = el("ol", "board");
+      boardLists[g.key] = list;
+      card.append(artTile(g.key, g.title), name, el("p", "game-card__blurb", g.blurb), el("p", "game-card__top", "TOP 3"), list);
+      $("arcade-cards").append(card);
+
+      const champ = pop(el("article", "card champ"), 260 + i * 140);
+      const champName = el("p", "champ__name");
+      champNames[g.key] = champName;
+      champ.append(el("span", `pill champ__game fill-${g.color}`, g.title), el("span", "champ__rank", "#1"), champName);
+      $("final-row").append(champ);
+    });
+    // VS stickers in the gaps between the five champions
+    for (let i = 1; i < 5; i++) {
+      const vs = pop(el("span", `pill pill--filled-ink vs tilt-${(i % 5) + 1}`, "VS"), 900 + i * 60);
+      vs.style.left = `${i * 300 + (i - 0.5) * 64}px`;
+      $("final-row").append(vs);
+    }
+
+    MOTION_GAMES.forEach((g, i) => {
+      const card = pop(el("article", "card move-card"), 260 + i * 90);
+      const text = el("div");
+      text.append(el("h3", "move-card__name", g.name), el("p", "move-card__how", g.how));
+      card.append(shape(g.shape, `shape shape--${g.color} move-card__shape`), text);
+      $("motion-grid").append(card);
+    });
+
+    // Marquee: every game name, twice, so the -50% scroll loops without a seam.
+    const allNames = [...GAME_LIST.map((g) => g.title), ...MOTION_GAMES.map((g) => g.name), ...PARTY_GAMES];
+    for (let pass = 0; pass < 2; pass++) {
+      for (const name of allNames) $("marquee-track").append(el("span", "pill pill--thin", name));
+    }
+
+    // The still (reduced-motion) screen
+    GAME_LIST.forEach((g) => $("still-arcade").append(el("span", `pill fill-${g.color}`, g.title)));
+    MOTION_GAMES.forEach((g) => $("still-motion").append(el("span", "pill", g.name)));
+    PARTY_GAMES.forEach((name) => $("still-party").append(el("span", "pill", name)));
+
+    // ---------- Leaderboards ----------
+    // At the booth: the arcade server's real top 3 (empty slots if it's down or nobody has played).
+    // With ?demo (and on the resources site): made-up stand-in players, so no real names show.
+    const DEMO = new URLSearchParams(location.search).has("demo");
+    const STAND_INS = {
+      dino: [["PIXEL PILOT", 2480], ["CACTUS KID", 1935], ["JUMP JET", 1260]],
+      flappy: [["BYTE BIRD", 415], ["GAP HUNTER", 290], ["WING IT", 185]],
+      snake: [["NOODLE", 320], ["LONG BOI", 250], ["SSSAM", 160]],
+      memory: [["FLASHBACK", 1860], ["DEJA VU", 1420], ["FLIP SIDE", 980]],
+      stack: [["HIGH RISE", 565], ["STACKY", 410], ["BLOCK PARTY", 275]],
+    };
+    const standInBoards = () =>
+      Object.fromEntries(
+        Object.entries(STAND_INS).map(([key, rows]) => [key, rows.map(([name, score], i) => ({ rank: i + 1, name, score }))]),
+      );
+
+    let boards = {};
+    async function loadBoards() {
+      try {
+        boards = DEMO ? standInBoards() : (await api.boards()) || {};
+      } catch {
+        // Keep the last boards we had; empty slots invite people to play.
+      }
+      for (const g of GAME_LIST) {
+        const rows = boards[g.key] || [];
+        const list = boardLists[g.key];
+        list.replaceChildren();
+        for (let r = 0; r < 3; r++) {
+          const entry = rows[r];
+          const row = el("li", `board__row${entry ? "" : " board__row--empty"}`);
+          row.append(
+            el("span", "board__rank", String(r + 1)),
+            el("span", "board__name", entry ? entry.name : r === 0 ? "BE THE FIRST" : "YOUR NAME?"),
+            el("span", "board__score", entry ? String(entry.score) : "—"),
+          );
+          list.append(row);
+        }
+        const champ = champNames[g.key];
+        champ.textContent = rows[0] ? rows[0].name : "COULD BE YOU";
+        champ.classList.toggle("is-open", !rows[0]);
+      }
+    }
+
+    // ---------- Scene loop ----------
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    reduced.addEventListener("change", () => location.reload());
+
+    const scenes = [...document.querySelectorAll(".scene[data-ms]")];
+    let current = -1;
+    let cleanups = [];
+
+    const later = (fn, ms) => {
+      const id = setTimeout(fn, ms);
+      cleanups.push(() => clearTimeout(id));
+    };
+
+    const onEnter = {
+      arcade() {
+        loadBoards();
+        const cards = [...document.querySelectorAll(".game-card")];
+        cards.forEach((card, i) =>
+          later(() => {
+            cards.forEach((c) => c.classList.toggle("is-lit", c === card));
+          }, 1900 + i * 2500),
+        );
+        later(() => cards.forEach((c) => c.classList.remove("is-lit")), 1900 + cards.length * 2500);
+      },
+      final() {
+        loadBoards();
+      },
+      party() {
+        // SPLIT SECOND: count up and stop a hair short of the target, again and again.
+        const out = $("clock-time");
+        const stops = [2.97, 3.04, 3.0, 2.99];
+        let lap = 0;
+        const run = () => {
+          const stopAt = stops[lap++ % stops.length];
+          const started = performance.now();
+          let frame;
+          const tick = (now) => {
+            const t = Math.min((now - started) / 1000, stopAt);
+            out.textContent = t.toFixed(2);
+            if (t < stopAt) frame = requestAnimationFrame(tick);
+            else later(run, 1300);
+          };
+          frame = requestAnimationFrame(tick);
+          cleanups.push(() => cancelAnimationFrame(frame));
+        };
+        out.textContent = "0.00";
+        later(run, 900);
+      },
+    };
+
+    function show(next) {
+      cleanups.forEach((fn) => fn());
+      cleanups = [];
+      document.querySelectorAll(".game-card.is-lit").forEach((c) => c.classList.remove("is-lit"));
+
+      const prev = scenes[current];
+      current = next % scenes.length;
+      const scene = scenes[current];
+
+      if (prev && prev !== scene) {
+        prev.classList.remove("is-in");
+        prev.classList.add("is-out");
+        setTimeout(() => prev.classList.remove("is-out"), 460);
+      }
+      scene.classList.remove("is-in", "is-out");
+      void scene.offsetWidth; // restart the pop-in animations
+      scene.classList.add("is-in");
+      document.body.dataset.scene = scene.dataset.scene;
+
+      onEnter[scene.dataset.scene]?.();
+      setTimeout(() => show(current + 1), Number(scene.dataset.ms));
+    }
+
+    // ?scene=3 starts the loop on scene 3 (handy for checking one scene)
+    const startAt = Math.max(1, Number(new URLSearchParams(location.search).get("scene")) || 1);
+    loadBoards();
+    if (!reduced.matches) show(startAt - 1);
+  </script>
+</body>
+</html>
