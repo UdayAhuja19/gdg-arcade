@@ -58,6 +58,15 @@
         <p class="t-small round-box__note" id="round-note"></p>
       </section>
 
+      <!-- Between rounds: how the next game works, in three steps (filled in by phone.js) -->
+      <section class="card howto" id="howto" hidden aria-labelledby="howto-title">
+        <header class="howto__head">
+          <h2 class="howto__title" id="howto-title">&lt;HOW TO PLAY&gt;</h2>
+          <p class="pill pill--sm pill--filled-ink howto__game" id="howto-game">MASH BATTLE</p>
+        </header>
+        <ol class="howto__steps" id="howto-steps"></ol>
+      </section>
+
       <div class="tap-zone">
         <button class="tap" id="tap" type="button">
           <span class="tap__label" id="tap-label">TAP</span>
@@ -65,12 +74,12 @@
         </button>
       </div>
 
-      <!-- LIGHTS OUT: five lights; the whole panel is the button. Tap when they all go out. -->
+      <!-- LIGHTS OUT: five red lights, then all green; the whole panel is the button. Tap on green. -->
       <button class="lights-pad" id="lights-pad" type="button" hidden>
         <span class="gantry" aria-hidden="true">
           <span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span><span class="gantry__light"></span>
         </span>
-        <span class="lights-pad__label" id="lights-label">TAP WHEN THE LIGHTS GO OUT</span>
+        <span class="lights-pad__label" id="lights-label">TAP WHEN GREEN</span>
       </button>
 
       <!-- SPLIT SECOND: one button starts and stops a hidden clock; LOCK IT IN keeps the last run -->

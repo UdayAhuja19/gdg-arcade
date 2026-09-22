@@ -164,7 +164,7 @@ const GAME_NAMES = { tap: "MASH BATTLE", snake: "SNAKE ROYALE", split: "SPLIT SE
 const COUNTDOWN_RULES = {
   tap: "USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS. FIRST TO FILL IT WINS.",
   split: "3 ROUNDS. HIT THE TARGET TIME WITH THE NUMBERS HIDDEN. LOWEST TOTAL ERROR WINS.",
-  lights: "3 STARTS. FIVE RED LIGHTS, THEN LIGHTS OUT: TAP. FASTEST TOTAL WINS. JUMP STARTS COST 1.000.",
+  lights: "3 STARTS. FIVE RED LIGHTS, THEN ALL GREEN: TAP. FASTEST TOTAL WINS. TAPPING ON RED COSTS 1.000.",
 };
 const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN", black: "BLACK" };
 
@@ -322,7 +322,7 @@ function setLane(slot, level, full) {
 
 // ---------- Lobby ----------
 const HERO = {
-  lights: { words: ["<LIGHTS", "OUT>"], tag: "FIVE RED LIGHTS. WHEN THEY GO OUT, TAP. FASTEST OVER 3 STARTS WINS." },
+  lights: { words: ["<LIGHTS", "OUT>"], tag: "FIVE RED LIGHTS. WHEN THEY TURN GREEN, TAP. FASTEST OVER 3 STARTS WINS." },
   split: { words: ["<SPLIT", "SECOND>"], tag: "STOP THE CLOCK DEAD ON. YOUR PHONE HIDES THE NUMBERS. THE SCREEN DOESN'T." },
   tap: { words: ["<MASH", "BATTLE>"], tag: "USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS." },
   snake: { words: ["<SNAKE", "ROYALE>"], tag: "STEER WITH YOUR PHONE. EAT TO GROW. LAST SNAKE STANDING WINS." },
@@ -695,10 +695,14 @@ let lightsSchedule = null; // { lightTimes, outAt } in server time
 let lightsFrame = 0;
 const serverToLocal = (t) => performance.now() + (t - Date.now());
 
-function paintBigGantry(on) {
+// Red lights one by one, then all five green together (the moment to tap).
+function paintBigGantry(on, go = false) {
   $("lights-gantry")
     .querySelectorAll(".gantry__light")
-    .forEach((bulb, i) => bulb.classList.toggle("is-on", i < on));
+    .forEach((bulb, i) => {
+      bulb.classList.toggle("is-on", !go && i < on);
+      bulb.classList.toggle("is-go", go);
+    });
 }
 
 function tickGantry() {
@@ -707,7 +711,7 @@ function tickGantry() {
   const now = performance.now();
   const out = now >= serverToLocal(lightsSchedule.outAt);
   const on = lightsSchedule.lightTimes.filter((t) => serverToLocal(t) <= now).length;
-  paintBigGantry(out ? 0 : on);
+  paintBigGantry(on, out);
   if (!out) lightsFrame = requestAnimationFrame(tickGantry);
 }
 
@@ -774,7 +778,7 @@ function renderLights(r) {
   buildLightsLanes(r);
   setText($("lights-round"), `START ${r.leg + 1} OF ${r.legs} · LIGHTS OUT`);
   const status =
-    r.stage === "grid" ? "WATCH THE LIGHTS" : r.stage === "go" ? "LIGHTS OUT!" : r.leg + 1 >= r.legs ? "RESULTS NEXT" : "TOTALS SO FAR";
+    r.stage === "grid" ? "WATCH THE LIGHTS" : r.stage === "go" ? "GREEN! TAP!" : r.leg + 1 >= r.legs ? "RESULTS NEXT" : "TOTALS SO FAR";
   setText($("lights-status"), status);
   if ((r.stage === "grid" || r.stage === "go") && r.outAt) {
     lightsSchedule = { lightTimes: r.lightTimes, outAt: r.outAt };

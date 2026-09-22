@@ -383,7 +383,8 @@ const PROGRESS_EVERY_MS = 100;
 const RESEND_FINAL_MS = 1000;
 // Only say "SENDING…" once the server has been quiet about our reports for this long.
 const UNCONFIRMED_MS = 800;
-const RULE = "USE EVERY FINGER. THE FULLER YOUR BAR, THE FASTER IT DRAINS. FIRST TO FILL IT WINS.";
+// In a round the note gets two lines; the full rules are on the how-to card between rounds.
+const RULE = "TAP FAST WITH BOTH THUMBS. FIRST TO FILL THE BAR WINS.";
 let frame = 0;
 
 function newBattle(msg, now) {
@@ -565,10 +566,66 @@ function setBar(level) {
   if ($("bar-label").textContent !== text) $("bar-label").textContent = text;
 }
 
+// ---------- How to play ----------
+// Three steps for each game, shown while the phone waits for the next round (in the lobby, on
+// the results, or watching a round it isn't in). In a round the notes above the controls remind.
+const HOW_TO = {
+  tap: {
+    name: "MASH BATTLE",
+    steps: [
+      "TAP THE BIG CIRCLE AS FAST AS YOU CAN. BOTH THUMBS HELP.",
+      "YOUR BAR ALWAYS DRAINS, AND THE FULLER IT IS, THE FASTER IT DRAINS.",
+      "FIRST TO FILL THE BAR WINS. AFTER 30 SECONDS, THE FULLEST BAR WINS.",
+    ],
+  },
+  lights: {
+    name: "LIGHTS OUT",
+    steps: [
+      "FIVE RED LIGHTS COME ON, ONE A SECOND.",
+      "WHEN THEY ALL TURN GREEN, TAP AS FAST AS YOU CAN.",
+      "TAP ON RED AND IT'S A JUMP START: +1 SECOND. BEST TOTAL OVER 3 STARTS WINS.",
+    ],
+  },
+  split: {
+    name: "SPLIT SECOND",
+    steps: [
+      "THE BIG SCREEN SHOWS A TARGET TIME, LIKE 3.00.",
+      "TAP START, COUNT IN YOUR HEAD, TAP STOP. YOUR PHONE SHOWS NO CLOCK. TRY AS OFTEN AS YOU LIKE.",
+      "HAPPY WITH A RUN? TAP <LOCK IT IN>. CLOSEST TOTAL OVER 3 ROUNDS WINS.",
+    ],
+  },
+  snake: {
+    name: "SNAKE ROYALE",
+    steps: [
+      "WATCH YOUR SNAKE ON THE BIG SCREEN.",
+      "SLIDE YOUR FINGER ON THE PAD TO TURN.",
+      "EAT TO GROW. HIT A WALL OR A SNAKE AND YOU'RE OUT. LAST ONE ALIVE WINS.",
+    ],
+  },
+};
+
+function renderHowTo(game) {
+  const card = $("howto");
+  const how = HOW_TO[game];
+  const show = Boolean(round && how) && !document.body.classList.contains("in-game");
+  card.hidden = !show;
+  if (!show || card.dataset.game === game) return;
+  card.dataset.game = game;
+  $("howto-game").textContent = how.name;
+  $("howto-steps").replaceChildren(
+    ...how.steps.map((text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      return li;
+    })
+  );
+}
+
 function renderRound() {
   const now = performance.now();
   setInGame();
   const game = round?.game ?? "tap";
+  renderHowTo(game);
   tapBtn.hidden = game !== "tap";
   pad.hidden = game !== "snake";
   splitZone.hidden = game !== "split";
@@ -653,7 +710,7 @@ function renderRound() {
       noteText = "THE BIG SCREEN STARTS THE NEXT ONE.";
     } else {
       statusText = `LOBBY · ${players}`;
-      noteText = `THE BIG SCREEN STARTS THE ROUND. ${RULE}`;
+      noteText = "THE BIG SCREEN STARTS THE ROUND.";
     }
   }
 
@@ -708,7 +765,7 @@ const toLocal = (serverTime) => serverTime - (clockOffset ?? 0);
 // can. The server sends the schedule ahead; this phone turns its lights off at that moment on its
 // own clock, and times the reaction from the frame the lights actually went off.
 // Short enough for the two lines the note gets in a round
-const LIGHTS_RULE = "TAP WHEN ALL FIVE GO OUT. TOO EARLY IS A JUMP START.";
+const LIGHTS_RULE = "TAP WHEN ALL FIVE TURN GREEN. TAP ON RED IS A JUMP START.";
 const RESEND_TAP_MS = 500;
 let lights = null; // { number, leg, lightTimes, outAt (local), outPaintedAt, pressed, result, seq, sentAt, acked, msg }
 let lightsFrame = 0;
@@ -738,14 +795,26 @@ function lightsTick(frameAt) {
   const on = lights.serverLights.filter((t) => toLocal(t) <= now).length;
   const out = now >= toLocal(lights.serverOut);
   if (out && lights.outPaintedAt === null) lights.outPaintedAt = now;
-  paintGantry(out ? 0 : on);
-  if (!lights.pressed || !lights.acked) lightsFrame = requestAnimationFrame(lightsTick);
+  paintGantry(on, out);
+  // Keeps drawing until green has shown, so a jump start still sees the lights change.
+  if (!lights.pressed || !lights.acked || lights.outPaintedAt === null) lightsFrame = requestAnimationFrame(lightsTick);
   if (lights.pressed && !lights.acked && now - lights.sentAt > RESEND_TAP_MS) sendTap();
 }
 
-function paintGantry(on) {
+// Red lights come on one by one; at "lights out" all five turn green. The label says TAP! at
+// the same moment, so the change doesn't rely on telling red from green.
+function paintGantry(on, go = false) {
   const bulbs = lightsPad.querySelectorAll(".gantry__light");
-  bulbs.forEach((bulb, i) => bulb.classList.toggle("is-on", i < on));
+  bulbs.forEach((bulb, i) => {
+    bulb.classList.toggle("is-on", !go && i < on);
+    bulb.classList.toggle("is-go", go);
+  });
+  if (go && !lights?.pressed) setLightsLabel("TAP!");
+}
+
+function setLightsLabel(text) {
+  const label = $("lights-label");
+  if (label.textContent !== text) label.textContent = text;
 }
 
 function sendTap() {
@@ -811,7 +880,7 @@ function renderLights(now) {
   }
   let statusText;
   let noteText = "";
-  let labelText = "TAP WHEN THE LIGHTS GO OUT";
+  let labelText = "TAP WHEN GREEN";
   let off = true;
 
   if (r.phase === "countdown" && r.inRound) {
@@ -819,12 +888,13 @@ function renderLights(now) {
     noteText = LIGHTS_RULE;
   } else if (r.phase === "playing" && r.inRound && (r.stage === "grid" || r.stage === "go")) {
     statusText = legLine;
-    noteText = "WATCH THE LIGHTS. DON'T MOVE UNTIL THEY'RE ALL OUT.";
+    noteText = "WAIT FOR GREEN. TAP ON RED AND IT'S A JUMP START.";
     off = false;
+    if (lights?.outPaintedAt != null) labelText = "TAP!";
     const mineNow = lights?.result;
     if (mineNow) {
       labelText = mineNow.jump ? "JUMP START!" : fmtReaction(mineNow.ms);
-      noteText = mineNow.jump ? "YOU WENT BEFORE LIGHTS OUT. +1.000" : "WAIT FOR THE OTHERS…";
+      noteText = mineNow.jump ? "YOU TAPPED ON RED. +1.000" : "WAIT FOR THE OTHERS…";
     }
   } else if (r.phase === "playing" && r.inRound && r.stage === "reveal") {
     const leg = r.mine;
@@ -843,12 +913,12 @@ function renderLights(now) {
   } else {
     statusText = "NEXT: LIGHTS OUT";
     const players = `${r.players} ${r.players === 1 ? "PLAYER" : "PLAYERS"} IN`;
-    noteText = `${r.phase === "lobby" ? "LOBBY · " : ""}${players}. THE BIG SCREEN STARTS THE ROUND. ${LIGHTS_RULE}`;
+    noteText = `${r.phase === "lobby" ? "LOBBY · " : ""}${players}. THE BIG SCREEN STARTS THE ROUND.`;
   }
   if (off) paintGantry(0);
   if (status.textContent !== statusText) status.textContent = statusText;
   if (now > noteUntil && note.textContent !== noteText) note.textContent = noteText;
-  if (label.textContent !== labelText) label.textContent = labelText;
+  setLightsLabel(labelText);
 }
 
 lightsPad.addEventListener("pointerdown", (event) => {
@@ -868,7 +938,7 @@ lightsPad.addEventListener("keydown", (event) => {
 // is this phone's (a press counts the moment it happens); the laptop only checks it. Start and
 // stop are sent once; a lock is resent until the laptop confirms it.
 const SPLIT_KEY = "gdg-party-split";
-const SPLIT_RULE = "START THE CLOCK, STOP IT WHEN YOU THINK IT'S TIME. NO NUMBERS: COUNT IT IN YOUR HEAD.";
+const SPLIT_RULE = "START, COUNT IN YOUR HEAD, STOP. LOCK IN YOUR BEST RUN.";
 let split = null; // { number, leg, runStartAt, runStartEpoch, runs, stopped, locked, seq, lockSeq, lockSentAt, delivered }
 
 function newSplit(msg) {
@@ -1053,7 +1123,7 @@ function renderSplit(now) {
   } else {
     statusText = "NEXT: SPLIT SECOND";
     const players = `${r.players} ${r.players === 1 ? "PLAYER" : "PLAYERS"} IN`;
-    noteText = `${r.phase === "lobby" ? "LOBBY · " : ""}${players}. THE BIG SCREEN STARTS THE ROUND. ${SPLIT_RULE}`;
+    noteText = `${r.phase === "lobby" ? "LOBBY · " : ""}${players}. THE BIG SCREEN STARTS THE ROUND.`;
   }
 
   // The target, big, whenever there's one to aim at.
@@ -1179,7 +1249,7 @@ function renderSnake(now) {
   } else {
     statusText = "NEXT: SNAKE ROYALE";
     const who = r.phase === "lobby" ? `LOBBY · ${players}.` : `${players}.`;
-    noteText = `${who} THE BIG SCREEN STARTS THE ROUND. ${SNAKE_RULE}`;
+    noteText = `${who} THE BIG SCREEN STARTS THE ROUND.`;
   }
 
   const status = $("round-status");

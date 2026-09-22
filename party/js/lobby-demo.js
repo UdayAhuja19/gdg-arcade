@@ -268,7 +268,7 @@ function splitDemo(root) {
 }
 
 // ---------- LIGHTS OUT ----------
-// A start: five lights a second apart, a random hold, lights out, and five reactions landing.
+// A start: five red lights a second apart, a random hold, all green, and five reactions landing.
 function lightsDemo(root) {
   const wrap = document.createElement("div");
   wrap.className = "demo__lights";
@@ -302,7 +302,10 @@ function lightsDemo(root) {
   function tick(now) {
     const out = now >= outAt;
     const on = Math.max(0, Math.min(LIGHTS, Math.floor((now - startAt) / LIGHT_EVERY_MS) + 1));
-    bulbs.forEach((bulb, i) => bulb.classList.toggle("is-on", !out && now >= startAt && i < on));
+    bulbs.forEach((bulb, i) => {
+      bulb.classList.toggle("is-on", !out && now >= startAt && i < on);
+      bulb.classList.toggle("is-go", out);
+    });
     for (const bot of bots) {
       if (bot.ms < 0 && now > outAt - 400) bot.el.textContent = "JUMP";
       else if (out && now - outAt >= bot.ms) bot.el.textContent = fmtReaction(bot.ms);
