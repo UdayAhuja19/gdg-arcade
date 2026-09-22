@@ -29,7 +29,8 @@
       left: 50%;
       width: 1920px;
       height: 1080px;
-      overflow: hidden;
+      /* No clipping here: on a screen that isn't exactly 16:9 the stage sits in a band of graph paper,
+         and anything that reaches past it should run on to the screen's real edge, not stop in a flat cut */
       transform: translate(-50%, -50%) scale(var(--fit, 1));
       isolation: isolate;
     }
@@ -57,22 +58,30 @@
       width: 104px;
     }
 
-    .bg-shape {
-      position: absolute;
-      z-index: -1;
+    /* The drifting corner shapes live on the whole screen, not the stage, so they always tuck
+       behind the screen's real edges whatever its shape. Sizes follow the stage's scale. */
+    .edges {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
     }
 
-    .bg-shape--flower { top: -70px; left: -70px; width: 240px; height: 240px; }
-    .bg-shape--half { top: 470px; left: -80px; width: 190px; height: 190px; }
-    .bg-shape--triangle { top: 250px; right: -60px; width: 190px; height: 190px; }
-    .bg-shape--circle { bottom: -70px; left: -60px; width: 180px; height: 180px; }
+    .bg-shape {
+      position: absolute;
+    }
+
+    .bg-shape--flower { top: calc(-70px * var(--fit)); left: calc(-70px * var(--fit)); width: calc(240px * var(--fit)); height: calc(240px * var(--fit)); }
+    .bg-shape--half { top: calc(50% - 70px * var(--fit)); left: calc(-80px * var(--fit)); width: calc(190px * var(--fit)); height: calc(190px * var(--fit)); }
+    .bg-shape--triangle { top: calc(50% - 290px * var(--fit)); right: calc(-60px * var(--fit)); width: calc(190px * var(--fit)); height: calc(190px * var(--fit)); }
+    .bg-shape--circle { bottom: calc(-70px * var(--fit)); left: calc(-60px * var(--fit)); width: calc(180px * var(--fit)); height: calc(180px * var(--fit)); }
 
     .chrome-marquee {
       position: absolute;
       z-index: 4;
       left: 60px;
       bottom: 62px;
-      width: 1250px;
+      width: 1200px;
       transition: width 500ms var(--ease-spring);
     }
 
@@ -787,11 +796,13 @@
   </style>
 </head>
 <body data-scene="title">
+  <div class="edges" aria-hidden="true">
+    <svg class="shape shape--yellow bg-shape bg-shape--flower drift drift--slow"><use href="assets/shapes.svg#flower"/></svg>
+    <svg class="shape shape--blue bg-shape bg-shape--half drift drift--reverse"><use href="assets/shapes.svg#half-circle"/></svg>
+    <svg class="shape shape--red bg-shape bg-shape--triangle drift"><use href="assets/shapes.svg#triangle"/></svg>
+    <svg class="shape shape--green bg-shape bg-shape--circle drift drift--slow drift--reverse"><use href="assets/shapes.svg#circle"/></svg>
+  </div>
   <div class="stage" id="stage">
-    <svg class="shape shape--yellow bg-shape bg-shape--flower drift drift--slow" aria-hidden="true"><use href="assets/shapes.svg#flower"/></svg>
-    <svg class="shape shape--blue bg-shape bg-shape--half drift drift--reverse" aria-hidden="true"><use href="assets/shapes.svg#half-circle"/></svg>
-    <svg class="shape shape--red bg-shape bg-shape--triangle drift" aria-hidden="true"><use href="assets/shapes.svg#triangle"/></svg>
-    <svg class="shape shape--green bg-shape bg-shape--circle drift drift--slow drift--reverse" aria-hidden="true"><use href="assets/shapes.svg#circle"/></svg>
 
     <header class="chrome-top">
       <p class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</p>
@@ -990,10 +1001,20 @@
     };
 
     // Fit the 1920x1080 stage to whatever screen the TV laptop has.
-    const stage = $("stage");
-    const fit = () => stage.style.setProperty("--fit", Math.min(innerWidth / 1920, innerHeight / 1080));
+    // ?safe shrinks it to 92% for a TV that crops its edges (overscan) and can't be set to "Just Scan".
+    const params = new URLSearchParams(location.search);
+    const SAFE = params.has("safe") ? 0.92 : 1;
+    const fit = () =>
+      document.documentElement.style.setProperty("--fit", Math.min(innerWidth / 1920, innerHeight / 1080) * SAFE);
     addEventListener("resize", fit);
     fit();
+
+    // F toggles full screen (browsers only allow it after a key press or click).
+    addEventListener("keydown", (e) => {
+      if (e.key !== "f" && e.key !== "F") return;
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen?.().catch(() => {});
+    });
 
     // ---------- Build the scenes from the real game list ----------
     GAME_LIST.forEach((g, i) => $("title-arts").append(pop(artTile(g.key, g.title), 520 + i * 90)));
@@ -1158,7 +1179,7 @@
     }
 
     // ?scene=3 starts the loop on scene 3 (handy for checking one scene)
-    const startAt = Math.max(1, Number(new URLSearchParams(location.search).get("scene")) || 1);
+    const startAt = Math.max(1, Number(params.get("scene")) || 1);
     loadBoards();
     if (!reduced.matches) show(startAt - 1);
   </script>
