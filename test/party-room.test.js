@@ -13,12 +13,15 @@ function pingMany(room, clientId, rtt, count) {
   for (let i = 0; i < count; i += 1) room.recordPing(clientId, rtt);
 }
 
-test("phones get slots and colours in order, and a 6th is turned away", () => {
+test("phones get slots and colours in order, and an 11th is turned away", () => {
   const room = createRoom();
+  assert.equal(MAX_PLAYERS, 10);
   const results = joinAll(room, MAX_PLAYERS);
+  // Seats 6-10 wear the five colours again; the seat number tells them apart.
+  const colours = ["red", "blue", "yellow", "green", "black"];
   assert.deepEqual(
     results.map((r) => [r.player.slot, r.player.color]),
-    [[0, "red"], [1, "blue"], [2, "yellow"], [3, "green"], [4, "black"]]
+    Array.from({ length: 10 }, (_, slot) => [slot, colours[slot % 5]])
   );
   assert.deepEqual(room.join({ clientId: "phone-extra", name: "LATE" }, 0), { full: true });
 });
@@ -72,13 +75,14 @@ test("verdicts follow ping and stutter thresholds", () => {
   joinAll(room, 3);
   const verdict = () => room.snapshot(0).players.map((p) => p?.verdict ?? null);
 
-  assert.deepEqual(verdict(), ["MEASURING", "MEASURING", "MEASURING", null, null]);
+  const empty = new Array(MAX_PLAYERS - 3).fill(null);
+  assert.deepEqual(verdict(), ["MEASURING", "MEASURING", "MEASURING", ...empty]);
   assert.equal(room.snapshot(0).verdict.level, "waiting");
 
   pingMany(room, "phone-0000", 60, 20);
   pingMany(room, "phone-0001", 400, 20);
   pingMany(room, "phone-0002", 900, 20);
-  assert.deepEqual(verdict(), ["GOOD", "OK", "LAGGY", null, null]);
+  assert.deepEqual(verdict(), ["GOOD", "OK", "LAGGY", ...empty]);
   assert.equal(room.snapshot(0).verdict.level, "bad");
 
   room.kick(2);
@@ -176,5 +180,5 @@ test("clear empties every slot and reports who was removed", () => {
   const room = createRoom();
   joinAll(room, 3);
   assert.equal(room.clear().length, 3);
-  assert.deepEqual(room.snapshot(0).players, [null, null, null, null, null]);
+  assert.deepEqual(room.snapshot(0).players, new Array(MAX_PLAYERS).fill(null));
 });

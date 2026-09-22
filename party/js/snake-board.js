@@ -4,6 +4,7 @@ import { C, disc, label, paper, sticker } from "../../js/engine/draw.js";
 
 const CRASH_SHOWN_MS = 1000;
 const COLOR_NAMES = { red: "RED", blue: "BLUE", yellow: "YELLOW", green: "GREEN", black: "BLACK" };
+// SNAKE ROYALE only ever has seats 1-5 (one starting spot each).
 const SLOT_COLORS = ["red", "blue", "yellow", "green", "black"];
 // The fifth player's snake is ink (black), the one colour draw.js calls something else.
 const fillOf = (slot) => (SLOT_COLORS[slot] === "black" ? C.ink : C[SLOT_COLORS[slot]]);

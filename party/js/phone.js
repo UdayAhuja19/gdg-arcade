@@ -305,7 +305,8 @@ function handle(msg) {
       offlineSince = 0;
       sessionSet(JOINED_KEY, "1");
       document.body.dataset.color = msg.color;
-      $("you").textContent = `${msg.name}: YOU'RE ${COLOR_NAMES[msg.color] ?? ""}`;
+      // Colours repeat after seat 5, so the seat number is what tells two reds apart.
+      $("you").textContent = `${msg.name}: YOU'RE ${COLOR_NAMES[msg.color] ?? ""} #${msg.slot + 1}`;
       taps = msg.taps;
       renderRound();
       setConn("CONNECTED", "up");
@@ -706,7 +707,8 @@ const toLocal = (serverTime) => serverTime - (clockOffset ?? 0);
 // Five lights come on a second apart, then all go out after a random hold: tap as fast as you
 // can. The server sends the schedule ahead; this phone turns its lights off at that moment on its
 // own clock, and times the reaction from the frame the lights actually went off.
-const LIGHTS_RULE = "FIVE RED LIGHTS COME ON. WHEN THEY ALL GO OUT, TAP. TAP EARLY AND IT'S A JUMP START.";
+// Short enough for the two lines the note gets in a round
+const LIGHTS_RULE = "TAP WHEN ALL FIVE GO OUT. TOO EARLY IS A JUMP START.";
 const RESEND_TAP_MS = 500;
 let lights = null; // { number, leg, lightTimes, outAt (local), outPaintedAt, pressed, result, seq, sentAt, acked, msg }
 let lightsFrame = 0;

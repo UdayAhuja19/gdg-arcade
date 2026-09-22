@@ -664,11 +664,31 @@ body.phone.in-game {
   min-height: 0;
 }
 
-/* LIGHTS OUT fills the height left */
+/* LIGHTS OUT fills the height left, and the lights fill the pad: five tall capsules instead of
+   small dots in a big empty panel, since on the phone the lights are the whole game */
 .in-game .lights-pad {
   flex: 1 1 0;
+  grid-template-rows: minmax(0, 320px) auto;
+  align-content: center;
+  justify-content: stretch;
   min-height: 0;
   margin-bottom: 8px;
+}
+
+.in-game .lights-pad .gantry {
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+
+.in-game .lights-pad .gantry__light {
+  aspect-ratio: auto;
+  min-height: 40px;
+  border-radius: var(--radius-pill);
+}
+
+.in-game .lights-pad__label {
+  align-self: start;
 }
 
 /* SPLIT SECOND fills the height left: the circle as big as fits, LOCK IT IN under it */
@@ -776,6 +796,8 @@ body.phone.in-game {
   min-height: 100vh;
   padding: var(--space-4) clamp(16px, 2.5vw, 40px) var(--space-5);
   isolation: isolate;
+  /* Corner shapes on cards at the edge never make the page scroll sideways */
+  overflow-x: clip;
 }
 
 .screen-top__left {
@@ -878,6 +900,8 @@ body.phone.in-game {
   inset: 0;
   z-index: 2;
   display: grid;
+  /* A definite cell, so a card's max-height: 100% really stops at the footer */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   padding: var(--space-4);
   background-color: var(--paper);
@@ -921,6 +945,64 @@ body.phone.in-game {
 
 .results__board {
   width: 100%;
+}
+
+/* The card never grows past the screen: if the list is too long, it scrolls inside the card
+   and <PLAY AGAIN> stays in view. */
+.results {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+}
+
+.results .results__board {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 2px var(--shadow-offset);
+}
+
+/* More than five players: a wider card with the list in two columns, 1-5 then 6-10 */
+.results--wide {
+  width: min(1180px, 100%);
+}
+
+.results--wide .results__board {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(5, auto);
+  grid-auto-flow: column;
+  column-gap: var(--space-5);
+}
+
+.results--wide .results__board .board__row {
+  min-height: clamp(42px, 5.6vh, 56px);
+}
+
+/* Anything shorter than 1080p (720p TVs, 768-1000px tall laptops): a tighter card, so ten rows
+   still fit */
+@media (max-height: 1000px) {
+  .results {
+    gap: var(--space-2);
+    padding-block: var(--space-4);
+  }
+
+  .results .results__title {
+    font-size: clamp(34px, 6vh, 56px);
+  }
+
+  .results #results-winner {
+    font-size: clamp(16px, 2.6vh, 24px);
+  }
+
+  .results .results__board {
+    gap: 6px;
+  }
+
+  .results--wide .results__board .board__row {
+    min-height: 38px;
+  }
+
+  .results .btn--lg {
+    min-height: 48px;
+    font-size: 18px;
+  }
 }
 
 .results__board .board__row {
@@ -1030,6 +1112,11 @@ body.phone.in-game {
   min-height: 0;
 }
 
+/* Six to ten bars: the gap narrows so they keep their width */
+.battle__lanes.lanes--many {
+  gap: clamp(12px, 2.2vw, 48px);
+}
+
 .battle-col {
   --level: 0;
   position: relative;
@@ -1087,6 +1174,19 @@ body.phone.in-game {
   white-space: nowrap;
 }
 
+/* Ten bars leave about 100px a name: up to two lines, split at a space */
+.lanes--many .battle-col__name {
+  display: -webkit-box;
+  min-height: 2em;
+  font-size: clamp(13px, min(1.1vw, 2.2vh), 24px);
+  line-height: 1;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 /* Along the bottom: the tips, then which game the next round plays */
 .screen-foot {
   display: flex;
@@ -1140,8 +1240,9 @@ body.phone.in-game {
 .socials-card__peek {
   position: absolute;
   z-index: -1;
-  top: -22px;
-  left: -20px;
+  /* Low enough to clear the seats above, high enough to stay inside the page's bottom padding */
+  bottom: -8px;
+  left: -26px;
   width: 52px;
   height: 52px;
   color: var(--red);
@@ -1257,7 +1358,10 @@ body.phone.in-game {
   min-height: 0;
 }
 
+/* Everything in a lane is sized from the lane's own width (cqi), so a reaction like 0.203 fits
+   whether there are 2 lanes or 10. */
 .split-col {
+  container-type: inline-size;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   justify-items: center;
@@ -1276,7 +1380,7 @@ body.phone.in-game {
 .split-col__name {
   max-width: 100%;
   overflow: hidden;
-  font-size: clamp(16px, 2.6vh, 26px);
+  font-size: clamp(13px, min(9cqi, 2.6vh), 26px);
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1295,15 +1399,26 @@ body.phone.in-game {
 }
 
 .split-col__clock {
-  font-size: clamp(44px, min(6vw, 11vh), 120px);
+  font-size: clamp(26px, min(26cqi, 11vh), 120px);
   line-height: 1;
   letter-spacing: -0.03em;
+}
+
+/* No time yet: a small muted dash, not a clock-sized ink bar */
+.split-col__clock.is-empty {
+  font-size: clamp(20px, min(12cqi, 5vh), 48px);
+  color: var(--muted);
 }
 
 /* A run is going: the lane fills with the player's colour. */
 .split-col.is-running {
   color: var(--on-player);
   background: var(--player);
+}
+
+/* On a filled lane the colour dot would vanish into the lane: it turns paper */
+.split-col.is-running .split-col__name::before {
+  background: var(--paper);
 }
 
 .split-col.is-locked {
@@ -1322,8 +1437,49 @@ body.phone.in-game {
 .split-col__runs,
 .split-col__total {
   min-height: 1.2em;
-  font-size: clamp(12px, 1.8vh, 18px);
+  font-size: clamp(11px, min(6.5cqi, 1.8vh), 18px);
   font-weight: 800;
+  white-space: nowrap;
+}
+
+.split-col__off {
+  max-width: 100%;
+}
+
+/* More than five players: two rows of five, so every lane stays wide enough to read */
+.split__lanes.lanes--rows {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(5, minmax(0, 300px));
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+.lanes--rows .split-col {
+  gap: 4px;
+  padding-block: clamp(8px, 1.2vh, 16px);
+}
+
+.lanes--rows .split-col__clock {
+  font-size: clamp(24px, min(24cqi, 6.4vh), 96px);
+}
+
+.lanes--rows .split-col__off {
+  padding-block: 0.4em 0.34em;
+  font-size: clamp(12px, min(7cqi, 1.8vh), 18px);
+}
+
+/* The RUN line is blank at the reveal: in a short lane it gives its height back */
+.lanes--rows .split-col__runs:empty {
+  display: none;
+}
+
+.lanes--rows .split-col__name {
+  font-size: clamp(13px, min(8cqi, 2.2vh), 22px);
+}
+
+/* Two rows of lanes need the height: a smaller gantry (it's the same five lights) */
+.lights:has(.lanes--rows) .gantry--big {
+  width: min(100%, 640px, 62vh);
+  padding: clamp(10px, 1.4vw, 20px);
 }
 
 /* SNAKE ROYALE: the board, with who's who beside it */
@@ -1730,6 +1886,35 @@ body.phone.in-game {
   }
 }
 
+/* 4:3 projectors and small laptops (1000-1299px): the buttons, club pill and logo share the
+   row by their own widths instead of three equal columns, and the scrolling tips (the least
+   important thing on the screen) make room for NEXT GAME and the socials card. */
+@media (min-width: 1000px) and (max-width: 1299px) {
+  .screen-top {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  /* Wraps to two lines rather than running into the round pill when that grows mid-round */
+  .screen-top .pill--header {
+    justify-self: center;
+    max-width: 100%;
+    font-size: clamp(11px, 1.15vw, 15px);
+    line-height: 1.1;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (min-width: 1000px) and (max-width: 1149px) {
+  .screen-foot .tips {
+    display: none;
+  }
+
+  .screen-foot {
+    justify-content: space-between;
+  }
+}
+
 @media (max-width: 999px) {
   /* The club pill gets its own centred row under the buttons and the logo */
   .screen-top {
@@ -1820,7 +2005,7 @@ body.phone.in-game {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: clamp(8px, 1.4vh, 16px);
   min-height: 0;
   padding: clamp(16px, 2.4vh, 32px) clamp(18px, 1.8vw, 32px);
@@ -1843,8 +2028,13 @@ body.phone.in-game {
   line-height: 1;
 }
 
+/* As big as the card has room for above the seats: its height gives way first (flex-shrink)
+   and the width follows through the aspect ratio. Ten seats take more height, so it starts smaller. */
 .qr {
-  width: min(36vh, 400px);
+  flex: 0 1 auto;
+  width: auto;
+  height: min(36vh, 400px);
+  min-height: 140px;
   aspect-ratio: 1;
   padding: 12px;
   background: var(--paper);
@@ -1858,6 +2048,10 @@ body.phone.in-game {
   line-height: 1.2;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.party-big .qr {
+  height: min(31vh, 400px);
 }
 
 .join-card__spots {
@@ -2004,7 +2198,7 @@ body.phone.in-game {
   font-variant-numeric: tabular-nums;
 }
 
-/* A seat per player */
+/* A seat per player: five in a row */
 .players {
   grid-area: players;
   display: grid;
@@ -2012,6 +2206,14 @@ body.phone.in-game {
   gap: clamp(14px, 1.4vw, 26px);
   height: clamp(96px, 13vh, 150px);
   min-height: 0;
+}
+
+/* Six or more players (body.party-big, set by screen.js once seat 6 is taken): ten seats,
+   two rows of five */
+.party-big .players {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.6vh, 18px) clamp(14px, 1.4vw, 26px);
+  height: clamp(150px, 21vh, 250px);
 }
 
 .verdict-box {
@@ -2037,6 +2239,22 @@ body:not(.show-stats) .player:not(.player--empty) {
   gap: var(--space-2);
   color: var(--on-player);
   background: var(--player);
+}
+
+/* Ten half-height seats: less padding and a smaller badge, so a two-line name still fits */
+body.party-big:not(.show-stats) .player,
+body.party-big:not(.show-stats) .player--empty {
+  padding: clamp(6px, 1vh, 12px) clamp(10px, 1vw, 18px);
+}
+
+body.party-big:not(.show-stats) .player__head {
+  gap: clamp(8px, 0.8vw, 14px);
+}
+
+body.party-big:not(.show-stats) .player__badge {
+  width: clamp(32px, min(2.6vw, 4.6vh), 48px);
+  height: clamp(32px, min(2.6vw, 4.6vh), 48px);
+  font-size: clamp(16px, min(1.4vw, 2.4vh), 24px);
 }
 
 body:not(.show-stats) .player .lane,
@@ -2077,6 +2295,12 @@ body:not(.show-stats) .player__name {
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* Ten seats: smaller names, split at a space */
+body.party-big:not(.show-stats) .player__name {
+  font-size: clamp(15px, min(1.5vw, 2.7vh), 34px);
+  overflow-wrap: break-word;
 }
 
 body:not(.show-stats) .player__ping {
@@ -2124,6 +2348,10 @@ body:not(.show-stats) .player.is-down .player__name {
   line-height: 1;
 }
 
+.party-big .player__open {
+  font-size: clamp(14px, min(1.3vw, 2.4vh), 26px);
+}
+
 .player__hint {
   color: var(--muted);
   font-weight: 800;
@@ -2134,7 +2362,7 @@ body:not(.show-stats) .player.is-down .player__name {
   35% { translate: 0 -6px; }
 }
 
-/* STATS: the QR on the left, the five connection cards 3 by 2 */
+/* STATS: the QR on the left, the connection cards 3 by 2 (or 5 by 2 for ten) */
 .show-stats .lobby {
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
@@ -2153,7 +2381,9 @@ body:not(.show-stats) .player.is-down .player__name {
 }
 
 .show-stats .qr {
-  width: min(100%, 26vh, 260px);
+  height: min(26vh, 260px);
+  max-width: 100%;
+  min-height: 100px;
 }
 
 .show-stats .join-card__title {
@@ -2165,9 +2395,15 @@ body:not(.show-stats) .player.is-down .player__name {
   max-width: 100%;
 }
 
-/* Five cards 3 by 2: each card reflows to its own width rather than the window's */
+/* Each card reflows to its own width rather than the window's */
 .show-stats .player {
   container-type: inline-size;
+}
+
+/* Ten cards need tight padding to fit two rows */
+.party-big.show-stats .player {
+  gap: clamp(6px, 1vh, 12px);
+  padding: clamp(10px, 1.4vh, 18px) clamp(12px, 1vw, 18px);
 }
 
 /* A card never squeezes its own contents: the ping row keeps its height, and if five cards
@@ -2228,6 +2464,61 @@ body:not(.show-stats) .player.is-down .player__name {
   }
 }
 
+/* Five across leaves a card about 220px wide: the network pill goes, so the name has room,
+   and the five stats become a tight label-and-number list instead of boxes. */
+@container (max-width: 280px) {
+  .player__head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .player__head .player__net {
+    display: none;
+  }
+
+  .player__name {
+    font-size: clamp(16px, 10cqi, 26px);
+  }
+
+  .player__badge {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .player__big {
+    font-size: clamp(30px, 16cqi, 44px);
+  }
+
+  .player__stats {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .player__stats > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px solid var(--grid-line);
+    border-radius: 0;
+  }
+
+  .player__stats dt {
+    font-size: 11px;
+  }
+
+  .player__stats dd {
+    font-size: 15px;
+  }
+
+  .player__foot {
+    gap: var(--space-2);
+  }
+}
+
+/* Up to five cards 3 by 2; ten go five across. The grid scrolls on screens too short for them. */
 .show-stats .players {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: none;
@@ -2236,6 +2527,10 @@ body:not(.show-stats) .player.is-down .player__name {
   overflow-x: hidden;
   overflow-y: auto;
   padding-bottom: var(--shadow-offset);
+}
+
+.party-big.show-stats .players {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 /* Corner shapes would be clipped by the scrolling grid, and they're clutter here anyway */
@@ -2262,11 +2557,19 @@ body:not(.show-stats) .player.is-down .player__name {
 /* Short screens (720p TVs, small laptops) */
 @media (min-width: 1000px) and (max-height: 840px) {
   .qr {
-    width: min(31vh, 400px);
+    height: min(31vh, 400px);
   }
 
   .players {
     height: clamp(120px, 19vh, 200px);
+  }
+
+  .party-big .qr {
+    height: min(26vh, 400px);
+  }
+
+  .party-big .players {
+    height: clamp(140px, 23vh, 220px);
   }
 
 }

@@ -4,6 +4,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import WebSocket from "ws";
 import { createPartyServer } from "../server/party/server.js";
+import { MAX_PLAYERS } from "../server/party/room.js";
 
 let party;
 let phoneUrl;
@@ -127,7 +128,7 @@ test("the big screen refuses requests that aren't addressed to localhost", async
 test("a phone joins, and the big screen sees it, its dot and its taps", async () => {
   await clearRoom();
   const screen = await openScreen();
-  assert.equal((await screen.next((m) => m.t === "join")).maxPlayers, 5);
+  assert.equal((await screen.next((m) => m.t === "join")).maxPlayers, 10);
 
   const { phone, reply } = await joinPhone("phone-aaaa-1", "  sara k ", "cellular");
   assert.equal(reply.t, "joined");
@@ -180,11 +181,11 @@ test("bad names are refused with the arcade's message", async () => {
   await phone.close();
 });
 
-test("the 6th phone is told the party is full", async () => {
+test("the 11th phone is told the party is full", async () => {
   await clearRoom();
   const phones = [];
-  for (let i = 0; i < 5; i += 1) phones.push((await joinPhone(`phone-full-${i}`, `P${i}`)).phone);
-  const extra = await joinPhone("phone-full-9", "LATE");
+  for (let i = 0; i < MAX_PLAYERS; i += 1) phones.push((await joinPhone(`phone-full-${i}`, `P${i}`)).phone);
+  const extra = await joinPhone("phone-full-extra", "LATE");
   assert.equal(extra.reply.t, "full");
   await Promise.all([...phones, extra.phone].map((p) => p.close()));
 });

@@ -14,7 +14,9 @@ const emptyTpl = $("empty-tpl");
 
 // Each slot's brand shape peeks from behind its card.
 const SHAPES = { red: "circle", blue: "flower", yellow: "blob", green: "triangle", black: "capsule" };
-const SLOT_COLORS = ["red", "blue", "yellow", "green", "black"];
+// Seats 6-10 wear the same five colours again (server/party/room.js).
+const BASE_COLORS = ["red", "blue", "yellow", "green", "black"];
+const slotColor = (slot) => BASE_COLORS[slot % BASE_COLORS.length];
 const NETWORK_LABEL = { wifi: "WI-FI", cellular: "MOBILE DATA", unknown: "NETWORK ?" };
 const SPARK_MAX_MS = 500;
 const RECONNECT_MS = 1000;
@@ -30,7 +32,7 @@ const TUNNEL_TEXT = {
 };
 
 let ws = null;
-let maxPlayers = 5;
+let maxPlayers = 10;
 let presentCount = 0;
 // Whether each slot's phone is connected right now, for the snake legend.
 let connectedSlots = [];
@@ -69,7 +71,7 @@ function field(el, name, value) {
 
 function emptyCard(slot) {
   const el = emptyTpl.content.firstElementChild.cloneNode(true);
-  el.dataset.color = SLOT_COLORS[slot];
+  el.dataset.color = slotColor(slot);
   el.querySelector(".player__badge").textContent = slot + 1;
   field(el, "n", slot + 1);
   return el;
@@ -122,8 +124,19 @@ function updateCard(el, p) {
   }
 }
 
+// Up to five players the screen keeps its five-seat layout. Once someone sits in seat 6 or
+// later it switches to ten seats (body.party-big), and back when seats 6-10 are empty again.
+const SMALL_PARTY = 5;
+
 function renderPlayers(players) {
-  for (let slot = 0; slot < maxPlayers; slot += 1) {
+  const big = players.some((p, slot) => p && slot >= SMALL_PARTY);
+  document.body.classList.toggle("party-big", big);
+  const seats = big ? maxPlayers : Math.min(SMALL_PARTY, maxPlayers);
+  // Seats that are no longer shown go away.
+  for (let slot = seats; slot < cards.length; slot += 1) cards[slot]?.el.remove();
+  cards.length = Math.min(cards.length, seats);
+
+  for (let slot = 0; slot < seats; slot += 1) {
     const p = players[slot] ?? null;
     // A new player in the slot gets a fresh card (and a fresh pop-in).
     const key = p ? `${p.joinedAt}:${p.name}` : "empty";
@@ -263,6 +276,7 @@ function renderResults(r) {
     rows.push(row);
   }
   $("results-board").replaceChildren(...rows);
+  $("results").classList.toggle("results--wide", rows.length > SMALL_PARTY);
 }
 
 // One tall bar per player in the round, keyed by slot.
@@ -286,6 +300,7 @@ function buildLanes(r) {
     laneEls.set(b.slot, col);
     return col;
   });
+  lanes.classList.toggle("lanes--many", cols.length > SMALL_PARTY);
   lanes.replaceChildren(...cols);
 }
 
@@ -541,11 +556,18 @@ function buildSplitLanes(r) {
     splitLanes.set(p.slot, { el: col, runAt: null });
     return col;
   });
+  lanes.classList.toggle("lanes--rows", cols.length > SMALL_PARTY);
   lanes.replaceChildren(...cols);
 }
 
 function setText(el, text) {
   if (el.textContent !== text) el.textContent = text;
+}
+
+// A lane's big number; "–" (no time yet) shows as a small muted dash.
+function setClock(el, text) {
+  setText(el, text);
+  el.classList.toggle("is-empty", text === "–");
 }
 
 // One lane from the server's view of that player (every snapshot).
@@ -560,7 +582,7 @@ function paintLane(p, r) {
   const shown = reveal ? leg : p.ms === null ? null : { ms: p.ms, error: p.error };
   el.classList.toggle("is-running", lane.runAt !== null);
   el.classList.toggle("is-locked", p.locked && r.stage === "run");
-  if (lane.runAt === null) setText(el.querySelector(".split-col__clock"), shown ? fmt(shown.ms) : reveal ? "MISS" : "–");
+  if (lane.runAt === null) setClock(el.querySelector(".split-col__clock"), shown ? fmt(shown.ms) : reveal ? "MISS" : "–");
   const off = el.querySelector(".split-col__off");
   off.hidden = !shown;
   if (shown) {
@@ -579,7 +601,7 @@ function tickSplitClocks() {
   for (const lane of splitLanes.values()) {
     if (lane.runAt === null) continue;
     any = true;
-    setText(lane.el.querySelector(".split-col__clock"), fmt(now - lane.runAt));
+    setClock(lane.el.querySelector(".split-col__clock"), fmt(now - lane.runAt));
   }
   if (any && !$("split").hidden) splitFrame = requestAnimationFrame(tickSplitClocks);
 }
@@ -653,7 +675,7 @@ function onSplit(msg) {
   lane.el.classList.remove("is-running");
   if (msg.ms !== null) {
     // The phone's own time replaces the screen's: that's the one that counts.
-    setText(lane.el.querySelector(".split-col__clock"), fmt(msg.ms));
+    setClock(lane.el.querySelector(".split-col__clock"), fmt(msg.ms));
     const off = lane.el.querySelector(".split-col__off");
     off.hidden = false;
     setText(off, signed(msg.ms, splitTarget));
@@ -695,13 +717,14 @@ function buildLightsLanes(r) {
   if (lanes.dataset.key === key) return;
   lanes.dataset.key = key;
   lightsLanes.clear();
+  lanes.classList.toggle("lanes--rows", r.players.length > SMALL_PARTY);
   lanes.replaceChildren(
     ...r.players.map((p) => {
       const col = document.createElement("article");
       col.className = "split-col lights-col";
       col.dataset.color = p.color;
       col.innerHTML =
-        '<p class="split-col__name"></p><p class="split-col__clock t-score">–</p>' +
+        '<p class="split-col__name"></p><p class="split-col__clock t-score is-empty">–</p>' +
         '<p class="pill pill--sm split-col__off" hidden></p><p class="split-col__total t-score"></p>';
       col.querySelector(".split-col__name").textContent = p.name;
       lightsLanes.set(p.slot, col);
@@ -715,11 +738,11 @@ function paintReaction(col, leg) {
   const clock = col.querySelector(".split-col__clock");
   const off = col.querySelector(".split-col__off");
   if (!leg) {
-    setText(clock, "–");
+    setClock(clock, "–");
     off.hidden = true;
     return;
   }
-  setText(clock, leg.jump || leg.ms === null ? "–" : fmtReaction(leg.ms));
+  setClock(clock, leg.jump || leg.ms === null ? "–" : fmtReaction(leg.ms));
   off.hidden = !(leg.jump || leg.ms === null);
   if (!off.hidden) {
     setText(off, lightsLegText(leg));

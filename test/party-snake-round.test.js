@@ -57,6 +57,16 @@ test("a round starts with fewer than 4 players, down to the minimum", () => {
   assert.equal(SNAKE_TIMING.countdownMs, 3000);
 });
 
+test("SNAKE ROYALE only starts with seats 1 to 5, the ones with a starting spot", () => {
+  const round = createSnakeRound(TIMING, { random: farFood });
+  const six = players(6);
+  assert.match(round.start(six, 0).error, /SEATS 1 TO 5/);
+  assert.equal(round.phase, "lobby", "nothing started");
+  // Seat 7 alone has no starting spot either.
+  assert.match(round.start([six[5]], 0).error, /SEATS 1 TO 5/);
+  assert.equal(round.start(players(5), 0).error, undefined);
+});
+
 test("the board only moves after GO, and turns before GO or for another round don't count", () => {
   const round = createSnakeRound(TIMING, { random: farFood });
   round.start(players(1), 0);

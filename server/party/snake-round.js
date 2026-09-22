@@ -126,6 +126,10 @@ export function createSnakeRound(timing = {}, { random = Math.random } = {}) {
       if (players.length < MIN_PLAYERS) {
         return { error: `NEED AT LEAST ${MIN_PLAYERS} ${MIN_PLAYERS === 1 ? "PLAYER" : "PLAYERS"} TO START.` };
       }
+      // The board has a starting spot for each of the first five seats only.
+      if (players.some((p) => p.slot >= SPAWN_NAMES.length)) {
+        return { error: `SNAKE ROYALE ONLY HAS ROOM FOR SEATS 1 TO ${SPAWN_NAMES.length}.` };
+      }
       number += 1;
       phase = "countdown";
       startsAt = now + countdownMs;

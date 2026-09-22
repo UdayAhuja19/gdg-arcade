@@ -1,9 +1,11 @@
-// One party room with up to 5 phones. Pure logic with no sockets or timers, so it
+// One party room with up to 10 phones. Pure logic with no sockets or timers, so it
 // can be tested directly; server/party/server.js feeds it events and the clock.
 
 // The fifth colour is ink (black): the brand has four colours, and ink is already a game colour in the arcade.
-export const MAX_PLAYERS = 5;
-export const COLORS = ["red", "blue", "yellow", "green", "black"];
+// Seats 6-10 wear the same five colours again, so a player is their colour plus their seat number.
+export const MAX_PLAYERS = 10;
+export const BASE_COLORS = ["red", "blue", "yellow", "green", "black"];
+export const COLORS = Array.from({ length: MAX_PLAYERS }, (_, slot) => BASE_COLORS[slot % BASE_COLORS.length]);
 
 // A phone that drops keeps its slot this long, so a locked screen or a network
 // switch doesn't lose its place.
