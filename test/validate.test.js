@@ -42,8 +42,9 @@ test("scores that arrive faster than the game allows are rejected", () => {
   // 20 pts/s x 1.5 margin + 100 slack
   assert.equal(checkScore(dino, 400, 10), null);
   assert.ok(checkScore(dino, 401, 10));
-  // Memory has no rate cap, only a max score
+  // Memory: a perfect board deals another, so the cap is a rate, not a max
   const memory = getGame("memory");
-  assert.equal(checkScore(memory, 3000, 1), null);
-  assert.ok(checkScore(memory, 3101, 1000));
+  assert.equal(checkScore(memory, 3100, 8), null);
+  assert.equal(checkScore(memory, 9300, 20), null);
+  assert.ok(checkScore(memory, 9300, 5));
 });

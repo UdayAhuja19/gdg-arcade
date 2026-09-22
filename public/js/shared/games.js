@@ -44,7 +44,7 @@ export const GAME_LIST = [
     shape: "circle",
     blurb: "FIND ALL 8 PAIRS, FAST.",
     controls: [["CLICK", "FLIP A CARD"]],
-    scoring: ["+100 PER PAIR", "+50 STREAK BONUS", "TIME BONUS"],
+    scoring: ["+100 PER PAIR", "+50 STREAK BONUS", "TIME BONUS", "NO MISTAKES: ANOTHER BOARD"],
   },
   {
     key: "stack",

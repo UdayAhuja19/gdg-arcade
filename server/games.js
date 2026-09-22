@@ -5,7 +5,9 @@ const LIMITS = {
   dino: { maxScore: 99999, maxPerSec: 20 },
   flappy: { maxScore: 99999, maxPerSec: 15 },
   snake: { maxScore: 8000, maxPerSec: 60 },
-  memory: { maxScore: 3100, maxPerSec: null },
+  // Up to 3100 per board, and a perfect board deals another, so there is no fixed cap.
+  // A board takes at least 2s of peek plus the deal, ~6s for a fast human.
+  memory: { maxScore: 99999, maxPerSec: 600 },
   stack: { maxScore: 10000, maxPerSec: 100 },
 };
 

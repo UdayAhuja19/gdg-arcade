@@ -1,10 +1,14 @@
 // MEMORY MATCH: find all 8 pairs. Every card is shown for 2 seconds first.
 // +100 per pair, +50 for each pair in a row, and a time bonus for finishing under 90s.
+// Clear a board with no mistakes and a new one is dealt (streak and clock start
+// again). On those extra boards the first wrong pair ends the game, so players
+// who are all perfect on the first board still end up with different scores.
 import { createLoop, TICK_HZ } from "../engine/loop.js";
 import { formatScore } from "../ui/format.js";
 
 const PEEK_MS = 2000;
 const MISMATCH_MS = 750;
+const NEXT_BOARD_MS = 1400;
 const TIME_LIMIT_SEC = 120;
 const BONUS_UNDER_SEC = 90;
 const PAIR_POINTS = 100;
@@ -43,12 +47,13 @@ export function mount(root, { onScore, onGameOver }) {
   el.className = "memory";
   el.innerHTML = `
     <div class="memory__hud">
+      <span class="memory__stat"><span class="t-small">BOARD</span> <span class="t-score" data-hud="board">1</span></span>
       <span class="memory__stat"><span class="t-small">SCORE</span> <span class="t-score" data-hud="score">0</span></span>
       <span class="memory__stat"><span class="t-small">STREAK</span> <span class="t-score" data-hud="streak">0</span></span>
       <span class="memory__stat"><span class="t-small">TIME LEFT</span> <span class="t-score" data-hud="time">2:00</span></span>
     </div>
     <div class="memory__grid" role="group" aria-label="Memory cards"></div>
-    <p class="t-small memory__tip">FINISH IN UNDER 90 SECONDS FOR A TIME BONUS.</p>`;
+    <p class="t-small memory__tip" data-hud="tip">FINISH IN UNDER 90 SECONDS FOR A TIME BONUS. NO MISTAKES GETS YOU ANOTHER BOARD.</p>`;
   root.append(el);
 
   const grid = el.querySelector(".memory__grid");
@@ -56,9 +61,15 @@ export function mount(root, { onScore, onGameOver }) {
     score: el.querySelector("[data-hud=score]"),
     streak: el.querySelector("[data-hud=streak]"),
     time: el.querySelector("[data-hud=time]"),
+    board: el.querySelector("[data-hud=board]"),
+    tip: el.querySelector("[data-hud=tip]"),
   };
 
-  const deck = shuffle([...SYMBOLS, ...SYMBOLS]).map((symbol, i) => {
+  let deck = [];
+
+  function deal() {
+    grid.replaceChildren();
+    deck = shuffle([...SYMBOLS, ...SYMBOLS]).map((symbol, i) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "memory-card";
@@ -72,7 +83,8 @@ export function mount(root, { onScore, onGameOver }) {
     const card = { symbol, button, index: i, open: false, matched: false };
     button.addEventListener("click", () => flip(card));
     return card;
-  });
+    });
+  }
 
   let phase = "idle";
   let open = [];
@@ -80,6 +92,8 @@ export function mount(root, { onScore, onGameOver }) {
   let score = 0;
   let streak = 0;
   let matches = 0;
+  let mistakes = 0;
+  let board = 1;
   let playTicks = 0;
   let shownSecond = -1;
   const timers = new Set();
@@ -138,13 +152,22 @@ export function mount(root, { onScore, onGameOver }) {
       addScore(points);
       hud.streak.textContent = String(streak);
       pop(`+${points}`, b, streak > 1 ? "green" : "yellow");
-      if (matches === SYMBOLS.length) finish(true);
+      if (matches === SYMBOLS.length) {
+        if (mistakes === 0) nextBoard();
+        else finish(true);
+      }
     } else {
       streak = 0;
+      mistakes += 1;
       hud.streak.textContent = "0";
       locked = true;
       a.button.classList.add("is-wrong");
       b.button.classList.add("is-wrong");
+      // On an extra board, one wrong pair ends the game.
+      if (board > 1) {
+        finish(false);
+        return;
+      }
       later(() => {
         a.button.classList.remove("is-wrong");
         b.button.classList.remove("is-wrong");
@@ -155,18 +178,53 @@ export function mount(root, { onScore, onGameOver }) {
     }
   }
 
+  // Returns true if a bonus was given.
+  function timeBonus() {
+    const seconds = Math.floor(playTicks / TICK_HZ);
+    const bonus = Math.max(0, BONUS_UNDER_SEC - seconds) * TIME_POINTS;
+    if (bonus > 0) {
+      addScore(bonus);
+      pop(`TIME BONUS +${bonus}`, null, "green");
+    }
+    return bonus > 0;
+  }
+
+  function peek() {
+    phase = "peek";
+    deck.forEach((card) => setOpen(card, true));
+    later(() => {
+      deck.forEach((card) => setOpen(card, false));
+      phase = "play";
+      loop.start();
+      deck[0].button.focus({ preventScroll: true });
+    }, PEEK_MS);
+  }
+
+  function nextBoard() {
+    phase = "between";
+    loop.stop();
+    const hadBonus = timeBonus();
+    later(() => pop(`PERFECT! BOARD ${board + 1}`, null, "green"), hadBonus ? 700 : 0);
+    later(() => {
+      board += 1;
+      matches = 0;
+      mistakes = 0;
+      streak = 0;
+      playTicks = 0;
+      hud.board.textContent = String(board);
+      hud.streak.textContent = "0";
+      hud.tip.textContent = "ONE WRONG PAIR ENDS THE GAME. KEEP GOING.";
+      deal();
+      peek();
+    }, NEXT_BOARD_MS + (hadBonus ? 700 : 0));
+  }
+
   function finish(cleared) {
     phase = "done";
     loop.stop();
     let delay = 500;
     if (cleared) {
-      const seconds = Math.floor(playTicks / TICK_HZ);
-      const bonus = Math.max(0, BONUS_UNDER_SEC - seconds) * TIME_POINTS;
-      if (bonus > 0) {
-        addScore(bonus);
-        pop(`TIME BONUS +${bonus}`, null, "green");
-        delay = 1300;
-      }
+      if (timeBonus()) delay = 1300;
     } else {
       for (const card of deck) if (!card.matched) setOpen(card, true);
       delay = 1200;
@@ -190,17 +248,11 @@ export function mount(root, { onScore, onGameOver }) {
   }
 
   const loop = createLoop({ update, render });
+  deal();
 
   return {
     start() {
-      phase = "peek";
-      deck.forEach((card) => setOpen(card, true));
-      later(() => {
-        deck.forEach((card) => setOpen(card, false));
-        phase = "play";
-        loop.start();
-        deck[0].button.focus({ preventScroll: true });
-      }, PEEK_MS);
+      peek();
     },
     input() {},
     get ticks() {

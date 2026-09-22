@@ -54,6 +54,17 @@
         "--lan"
       ],
       "port": 3101
+    },
+    {
+      "name": "cv-arcade",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "../gdg-cv-arcade",
+        "run",
+        "preview"
+      ],
+      "port": 4173
     }
   ]
 }
