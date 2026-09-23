@@ -796,6 +796,82 @@
   </style>
 </head>
 <body data-scene="title">
+  <!-- Icons for the camera games. Brand style: one flat colour (the card's, as currentColor),
+       ink outlines, no gradients. Drawn on a 100x100 box. -->
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- 67 SPEED DUEL: the number itself, on a sticker pill -->
+      <symbol id="cv-speed" viewBox="0 0 100 100">
+        <rect x="3" y="22" width="94" height="56" rx="28" fill="currentColor" stroke="#111111" stroke-width="3"/>
+        <text x="50" y="51" fill="#111111" font-family="Archivo Variable, Archivo, Helvetica, Arial, sans-serif" font-size="44" font-weight="900" letter-spacing="-2" text-anchor="middle" dominant-baseline="central">67</text>
+      </symbol>
+
+      <!-- FRUIT NINJA: a fruit cut in two, with the slice -->
+      <symbol id="cv-slice" viewBox="0 0 100 100">
+        <g fill="currentColor" stroke="#111111" stroke-width="3" stroke-linejoin="round">
+          <path d="M14 52 A30 30 0 0 1 56 10 Z"/>
+          <path d="M86 48 A30 30 0 0 1 44 90 Z"/>
+        </g>
+        <path d="M12 86 L88 12" fill="none" stroke="#111111" stroke-width="6" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- RED LIGHT: a traffic light with the top lamp lit -->
+      <symbol id="cv-light" viewBox="0 0 100 100">
+        <rect x="28" y="8" width="44" height="84" rx="16" fill="#111111"/>
+        <circle cx="50" cy="28" r="11" fill="currentColor" stroke="#ffffff" stroke-width="2"/>
+        <g fill="none" stroke="#ffffff" stroke-width="3">
+          <circle cx="50" cy="54" r="11"/><circle cx="50" cy="80" r="11"/>
+        </g>
+      </symbol>
+
+      <!-- NEON RUNNER: a runner mid-stride on the track -->
+      <symbol id="cv-runner" viewBox="0 0 100 100">
+        <g fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M58 38 L44 56"/>
+          <path d="M44 56 L30 78"/>
+          <path d="M44 56 L60 68 L54 84"/>
+          <path d="M52 44 L70 50"/>
+        </g>
+        <circle cx="64" cy="22" r="12" fill="currentColor" stroke="#111111" stroke-width="3"/>
+        <g fill="none" stroke="#111111" stroke-width="5" stroke-linecap="round">
+          <path d="M10 44 h14"/><path d="M8 58 h12"/>
+          <path d="M12 92 h76"/>
+        </g>
+      </symbol>
+
+      <!-- HOLE IN THE WALL: a wall with a body-shaped hole to fit through -->
+      <symbol id="cv-wall" viewBox="0 0 100 100">
+        <rect x="8" y="12" width="84" height="72" rx="12" fill="#111111"/>
+        <circle cx="50" cy="30" r="9" fill="#ffffff"/>
+        <g fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M50 42 V58"/>
+          <path d="M30 56 L50 46 L70 56"/>
+          <path d="M36 74 L50 58 L64 74"/>
+        </g>
+        <path d="M8 92 h84" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- RHYTHM PUNCH: a glove landing on the beat -->
+      <symbol id="cv-punch" viewBox="0 0 100 100">
+        <circle cx="28" cy="64" r="12" fill="currentColor" stroke="#111111" stroke-width="3"/>
+        <rect x="26" y="34" width="50" height="46" rx="22" fill="currentColor" stroke="#111111" stroke-width="3"/>
+        <rect x="34" y="78" width="34" height="14" rx="7" fill="#111111"/>
+        <g fill="none" stroke="#111111" stroke-width="6" stroke-linecap="round">
+          <path d="M82 30 L92 20"/><path d="M68 20 L72 8"/>
+        </g>
+      </symbol>
+
+      <!-- BALLOON POP: a balloon just as it pops -->
+      <symbol id="cv-balloon" viewBox="0 0 100 100">
+        <circle cx="44" cy="46" r="26" fill="currentColor" stroke="#111111" stroke-width="3"/>
+        <path d="M37 70 L51 70 L44 80 Z" fill="currentColor" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M44 82 q10 8 0 14" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+        <g fill="none" stroke="#111111" stroke-width="6" stroke-linecap="round">
+          <path d="M74 26 L86 14"/><path d="M78 46 L93 46"/><path d="M72 64 L84 75"/>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
   <div class="edges" aria-hidden="true">
     <svg class="shape shape--yellow bg-shape bg-shape--flower drift drift--slow"><use href="assets/shapes.svg#flower"/></svg>
     <svg class="shape shape--blue bg-shape bg-shape--half drift drift--reverse"><use href="assets/shapes.svg#half-circle"/></svg>
@@ -960,13 +1036,13 @@
     import { api } from "./js/api.js";
 
     const MOTION_GAMES = [
-      { name: "67 SPEED DUEL", how: "PUMP BOTH ARMS AS FAST AS YOU CAN.", color: "blue", shape: "flower" },
-      { name: "FRUIT NINJA", how: "SWIPE YOUR HANDS TO SLICE.", color: "green", shape: "triangle" },
-      { name: "RED LIGHT", how: "PUMP YOUR ARMS. FREEZE ON RED.", color: "red", shape: "circle" },
-      { name: "NEON RUNNER", how: "STEP, JUMP AND DUCK DOWN THE TRACK.", color: "yellow", shape: "capsule" },
-      { name: "HOLE IN THE WALL", how: "MATCH THE SHAPE BEFORE IT HITS YOU.", color: "ink", shape: "rounded-rect" },
-      { name: "RHYTHM PUNCH", how: "PUNCH THE TARGETS ON THE BEAT.", color: "red", shape: "half-circle" },
-      { name: "BALLOON POP", how: "POP THE BALLOONS WITH YOUR HANDS.", color: "blue", shape: "blob" },
+      { name: "67 SPEED DUEL", how: "PUMP BOTH ARMS AS FAST AS YOU CAN.", color: "blue", icon: "cv-speed" },
+      { name: "FRUIT NINJA", how: "SWIPE YOUR HANDS TO SLICE.", color: "green", icon: "cv-slice" },
+      { name: "RED LIGHT", how: "PUMP YOUR ARMS. FREEZE ON RED.", color: "red", icon: "cv-light" },
+      { name: "NEON RUNNER", how: "STEP, JUMP AND DUCK DOWN THE TRACK.", color: "yellow", icon: "cv-runner" },
+      { name: "HOLE IN THE WALL", how: "MATCH THE SHAPE BEFORE IT HITS YOU.", color: "ink", icon: "cv-wall" },
+      { name: "RHYTHM PUNCH", how: "PUNCH THE TARGETS ON THE BEAT.", color: "red", icon: "cv-punch" },
+      { name: "BALLOON POP", how: "POP THE BALLOONS WITH YOUR HANDS.", color: "blue", icon: "cv-balloon" },
     ];
     const PARTY_GAMES = ["MASH BATTLE", "LIGHTS OUT", "SPLIT SECOND"];
 
@@ -983,6 +1059,17 @@
       svg.setAttribute("aria-hidden", "true");
       const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
       use.setAttribute("href", `assets/shapes.svg#${name}`);
+      svg.append(use);
+      return svg;
+    };
+    // A camera-game icon from the sprite at the top of this page
+    const icon = (id, className) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", className);
+      svg.setAttribute("viewBox", "0 0 100 100");
+      svg.setAttribute("aria-hidden", "true");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", `#${id}`);
       svg.append(use);
       return svg;
     };
@@ -1047,7 +1134,7 @@
       const card = pop(el("article", "card move-card"), 260 + i * 90);
       const text = el("div");
       text.append(el("h3", "move-card__name", g.name), el("p", "move-card__how", g.how));
-      card.append(shape(g.shape, `shape shape--${g.color} move-card__shape`), text);
+      card.append(icon(g.icon, `shape shape--${g.color} move-card__shape`), text);
       $("motion-grid").append(card);
     });
 
