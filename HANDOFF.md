@@ -1,6 +1,44 @@
 # Handoff: GDG Arcade and the party game plan
 
-Last updated: 17 September 2026. This file is written for you, or for Claude on another device, to carry on the work without the old chat. Read it top to bottom once. After that, sections 3–6 are the reference.
+Last updated: 4 October 2026. This file is written for you, or for Claude on another device, to carry on the work without the old chat. **Section 0 is the current state; read it first.** Sections 1–7 are the older party-game handoff (17 September), still accurate for the party test itself.
+
+---
+
+## 0. Where things stand, 4 October 2026
+
+**The next deadline is the "hello, world!" event: Tuesday 6 October 2026, 16:00–18:00, room 0201 Innovation Lounge.** PICTIONARY (`server/pictionary/`, `pictionary/`) is the app being built for it. `CLAUDE.md` has the full PICTIONARY architecture; read that section before touching it.
+
+### Do this first: PICTIONARY is not committed
+
+`git status` shows all of it as untracked, two days before the event:
+
+```
+?? pictionary/  ?? server/pictionary/  ?? scripts/pictionary-bots.js
+?? test/pictionary-{game,server,scores,qr,audit}.test.js
+?? hello-world-blue-ice/  ?? taarini-invite/
+ M CLAUDE.md  M package.json  M .gitignore  M .claude/launch.json
+ M party/css/party.css  M party/js/screen.js
+```
+
+Nothing is lost while the folder is intact, but there is no undo and no copy anywhere else. **Offer to commit it early in the session** (run `npm test` first; it was green when last run). Everything else in both repos is committed and pushed.
+
+### What happened in the session that wrote this
+
+1. **Party mode went from 5 players to 10** and was audited at 16 screen sizes (16:9, 16:10, 4:3, 5:4, 21:9). Committed and pushed (`0cc9bab`, `14a15d1`).
+2. **LIGHTS OUT now turns green** instead of dark at the go moment, drawn as real F1 start lights (five pods of two round lamps under a beam, all CSS on `.gantry__light`). The phone label says TAP! at the same moment so it doesn't depend on telling red from green.
+3. **Phones show a `<HOW TO PLAY>` card** between rounds, three steps per game (`HOW_TO` in `party/js/phone.js`).
+4. **The resources site** got the socials page, the Motion Arcade tile (one tile for the whole CV arcade, at https://gdg-cv-arcade.vercel.app/), and the 10-phone party wording. Committed and pushed.
+5. **Two personal config files were added, outside both repos:**
+   - `~/.claude/skills/ponytail/SKILL.md` — a skill that says: look for a maintained library, framework or GitHub project before hand-writing a solved problem, judge it on maintenance, licence, fit and proportion, never add a dependency silently, and use the structure already in the project instead of hardcoding.
+   - `~/.claude/CLAUDE.md` — **every reply must start with 🧠.** It is a canary: if replies stop starting with it, context is full and instructions are being dropped, so Uday knows to `/compact` or `/clear`. Keep doing it.
+
+### Open questions, not yet acted on
+
+- **Air Jam** (https://github.com/vucinatim/air-jam), suggested as a way to remove phone-controller lag. **Evaluated and set aside for now**, because: it's socket.io over WebSockets, the same transport class as the current `ws`, so it doesn't remove network delay; PICTIONARY already avoids lag by design (the drawing never crosses the network, only "the first stroke happened" does); adopting it means React 19 + Tailwind + a build step + Postgres, a full rewrite of the phone and projector; and it is early (0.9.x, 6 stars, 0 forks, created November 2025). MIT licensed, so revisit **after** the event if a reusable base for future games is wanted.
+- **Hosting PICTIONARY or Air Jam on Vercel:** the pages could go there, the realtime server can't. Vercel's native WebSocket support (beta, June 2026) runs inside a function and inherits its duration limit, and reconnects aren't pinned to the same function. Air Jam's own docs put the realtime server on Railway. Not started.
+- **Hosting the socials page on Vercel:** asked, answered, nothing changed. The page is static but loads `../kit/`, so a Vercel project must serve the whole `gdg-resources` repo, not the `socials/` folder alone. Every QR code generated so far (the party big screen, the printed PNG and SVG, the A5 poster) encodes the GitHub Pages URL, so moving means regenerating and reprinting them, unless Pages stays live or redirects. Recommended keeping Pages unless a custom domain is wanted.
+- **A stable phone URL for the fair/event:** the Cloudflare quick tunnel gives a new address every restart, so the join QR can't be printed in advance. A **named** Cloudflare tunnel would fix that without any rewrite. Suggested, not started.
+- **PICTIONARY improvements** were the next topic. No specific problem has been named yet. Ask what actually feels wrong before changing anything, and keep in mind the event is in two days: prefer small, tested changes over anything structural.
 
 ---
 
