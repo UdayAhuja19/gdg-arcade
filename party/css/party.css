@@ -1257,7 +1257,8 @@ body.phone.in-game {
   white-space: nowrap;
 }
 
-/* Ten bars leave about 100px a name: up to two lines, split at a space */
+/* Ten bars leave a name about 145px. It gets three lines to use, so screen.js can keep the
+   type as big as possible (a name is fitted to its box, never cut off). */
 .lanes--many .battle-col__name {
   display: -webkit-box;
   min-height: 2em;
@@ -1267,7 +1268,7 @@ body.phone.in-game {
   white-space: normal;
   overflow-wrap: break-word;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 /* Along the bottom: the tips, then which game the next round plays */

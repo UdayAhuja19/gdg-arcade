@@ -18,6 +18,72 @@ const SHAPES = { red: "circle", blue: "flower", yellow: "blob", green: "triangle
 const BASE_COLORS = ["red", "blue", "yellow", "green", "black"];
 const slotColor = (slot) => BASE_COLORS[slot % BASE_COLORS.length];
 const NETWORK_LABEL = { wifi: "WI-FI", cellular: "MOBILE DATA", unknown: "NETWORK ?" };
+
+// A name is up to 16 characters (shared/names.js) and every name box on the big screen is a
+// fixed size, so the longest ones used to end in an ellipsis: MOHAMMED-ALM… . Across a room
+// that reads as a bug. Instead the text shrinks until it fits its box, down to a floor that
+// still reads from the back; only a name that doesn't fit even then falls back to the CSS
+// ellipsis. Refitting is skipped while the text and the box are unchanged, so it costs
+// nothing on the 4Hz state updates.
+const FIT_FLOOR = 0.6;
+const ruler = document.createElement("canvas").getContext("2d");
+
+// The widest single word, which is what decides whether a name breaks mid-word.
+function widestWord(text, style, size) {
+  ruler.font = `${style.fontStyle} ${style.fontWeight} ${size}px ${style.fontFamily}`;
+  let widest = 0;
+  for (const word of text.split(/\s+/)) {
+    // letter-spacing is added per character; the canvas ruler doesn't apply it.
+    const spacing = (parseFloat(style.letterSpacing) || 0) * word.length;
+    widest = Math.max(widest, ruler.measureText(word).width + spacing);
+  }
+  return widest;
+}
+
+function fitText(el, text) {
+  if (el.textContent !== text) el.textContent = text;
+  fitObserver.observe(el);
+  const box = el.clientWidth;
+  // Hidden (a round that isn't on screen): it gets fitted when it is shown.
+  if (!box) return;
+  const key = `${text}|${box}|${el.clientHeight}`;
+  if (el.dataset.fit === key) return;
+  el.dataset.fit = key;
+  el.style.fontSize = "";
+  const style = getComputedStyle(el);
+  const base = parseFloat(style.fontSize);
+  if (!base) return;
+  const floor = base * FIT_FLOOR;
+  const step = Math.max(1, base * 0.04);
+  // Too big means the text runs past the end of a one-line box or past the last line of a
+  // wrapping one. Breaking a word in the middle (ABDULRAHMA/N) is worth a little shrinking
+  // to avoid, but only a little: one unbroken 16-letter name would otherwise drag every
+  // name down to the floor, and big-but-broken reads better across a room than tiny.
+  const wordFloor = base * 0.8;
+  const tooBig = (size) =>
+    el.scrollWidth > el.clientWidth + 1 ||
+    el.scrollHeight > el.clientHeight + 2 ||
+    (size > wordFloor && widestWord(text, style, size) > el.clientWidth);
+  for (let size = base; tooBig(size) && size > floor; ) {
+    size = Math.max(floor, size - step);
+    el.style.fontSize = `${size}px`;
+  }
+}
+
+// A box's width settles after the first measurement (the grid columns size themselves, the
+// brand font finishes loading, the window or the TV's resolution changes), so every fitted
+// name is watched and measured again whenever its box gets a different width.
+const fitObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    const el = entry.target;
+    const width = Math.round(entry.contentRect.width);
+    if (!width || el.fitWidth === width) continue;
+    el.fitWidth = width;
+    const text = el.textContent;
+    delete el.dataset.fit;
+    fitText(el, text);
+  }
+});
 const SPARK_MAX_MS = 500;
 const RECONNECT_MS = 1000;
 
@@ -98,7 +164,7 @@ function sparkline(svg, pings) {
 }
 
 function updateCard(el, p) {
-  el.querySelector(".player__name").textContent = p.name;
+  fitText(el.querySelector(".player__name"), p.name);
   el.querySelector(".player__net").textContent = NETWORK_LABEL[p.network] ?? NETWORK_LABEL.unknown;
   el.classList.toggle("is-down", !p.connected);
 
@@ -232,7 +298,7 @@ function renderResults(r) {
   const winnerText =
     r.game === "tap" ? (top ? `${top.name} WINS!` : "") : r.winner ? `${r.winner} WINS!` : r.draw ? "DRAW!" : "";
   $("results-winner").hidden = !winnerText;
-  $("results-winner").textContent = winnerText;
+  fitText($("results-winner"), winnerText);
   const aliveCount = r.results.filter((entry) => entry.alive).length;
   const rows = r.results.map((entry) => {
     const row = document.createElement("li");
@@ -277,6 +343,10 @@ function renderResults(r) {
   }
   $("results-board").replaceChildren(...rows);
   $("results").classList.toggle("results--wide", rows.length > SMALL_PARTY);
+  rows.forEach((row, i) => {
+    const name = row.querySelector(".board__name");
+    if (name && r.results[i]) fitText(name, r.results[i].name);
+  });
 }
 
 // One tall bar per player in the round, keyed by slot.
@@ -296,12 +366,13 @@ function buildLanes(r) {
       '<p class="badge battle-col__badge" hidden>FULL!</p>' +
       '<div class="battle-col__track"><div class="battle-col__fill"></div></div>' +
       '<p class="battle-col__pct t-score">0%</p><p class="battle-col__name"></p>';
-    col.querySelector(".battle-col__name").textContent = b.name;
     laneEls.set(b.slot, col);
     return col;
   });
   lanes.classList.toggle("lanes--many", cols.length > SMALL_PARTY);
   lanes.replaceChildren(...cols);
+  // The names are fitted after the lanes are in the page, so each one knows its width.
+  cols.forEach((col, i) => fitText(col.querySelector(".battle-col__name"), r.bars[i].name));
 }
 
 function setLane(slot, level, full) {
@@ -427,7 +498,7 @@ function renderRound(r) {
     const timer = r.endsInMs > 0 ? String(Math.ceil(r.endsInMs / 1000)) : "TIME!";
     if ($("battle-timer").textContent !== timer) $("battle-timer").textContent = timer;
     $("battle-winner").hidden = !r.winner;
-    if (r.winner) $("battle-winner").textContent = `${r.winner} FILLED IT!`;
+    if (r.winner) fitText($("battle-winner"), `${r.winner} FILLED IT!`);
   }
   showResultsCard(r, showResults);
   syncDemo();
@@ -552,12 +623,12 @@ function buildSplitLanes(r) {
       '<p class="pill pill--sm split-col__off" hidden></p>' +
       '<p class="split-col__runs"></p>' +
       '<p class="split-col__total t-score"></p>';
-    col.querySelector(".split-col__name").textContent = p.name;
     splitLanes.set(p.slot, { el: col, runAt: null });
     return col;
   });
   lanes.classList.toggle("lanes--rows", cols.length > SMALL_PARTY);
   lanes.replaceChildren(...cols);
+  cols.forEach((col, i) => fitText(col.querySelector(".split-col__name"), r.players[i].name));
 }
 
 function setText(el, text) {
@@ -730,11 +801,11 @@ function buildLightsLanes(r) {
       col.innerHTML =
         '<p class="split-col__name"></p><p class="split-col__clock t-score is-empty">–</p>' +
         '<p class="pill pill--sm split-col__off" hidden></p><p class="split-col__total t-score"></p>';
-      col.querySelector(".split-col__name").textContent = p.name;
       lightsLanes.set(p.slot, col);
       return col;
     })
   );
+  r.players.forEach((p) => fitText(lightsLanes.get(p.slot).querySelector(".split-col__name"), p.name));
 }
 
 // A reaction on a lane: the lane fills in the player's colour; a jump start or no tap says so in red.
