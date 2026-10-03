@@ -5,3 +5,5 @@ dist/
 .pictionary-teams.json*
 # The hello, world! scoreboard (teams and scores from the day)
 data/
+# hello, world! artwork: 200MB+ of posters and fonts, kept out of git history
+hello-world-blue-ice/
