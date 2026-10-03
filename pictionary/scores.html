@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SCORES · hello, world! · GDG on Campus UOBD</title>
+  <link rel="icon" href="/assets/logo-mark.svg">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/pictionary/css/pictionary.css">
+</head>
+<body class="scores-page">
+  <header class="sp-top">
+    <a class="btn btn--sm" href="/">&larr; BACK TO THE GAME</a>
+    <span class="pill pill--header">GOOGLE DEVELOPERS GROUP ON CAMPUS UOBD</span>
+    <img class="sp-top__logo" src="/assets/logo-mark.svg" alt="GDG">
+  </header>
+
+  <main class="sp">
+    <div class="sp__intro">
+      <h1 class="t-display bracketed sp__title">SCORES</h1>
+      <p class="sp__lede">THE TEAMS AND EVERY GAME'S POINTS FROM HELLO, WORLD!, SAVED ON THIS LAPTOP.</p>
+      <p class="sp__error" id="load-error" role="alert" hidden></p>
+    </div>
+
+    <!-- The tally: one row per game, typed in after it ends -->
+    <section class="card sp-card" aria-labelledby="tally-title">
+      <div class="sp-card__head">
+        <h2 class="sp-card__title" id="tally-title">TALLY</h2>
+        <a class="btn btn--sm" href="/api/scores.csv" download>EXPORT CSV</a>
+      </div>
+      <div class="tally-wrap">
+        <table class="tally">
+          <thead>
+            <tr id="tally-head"><th scope="col" class="tally__game">GAME</th></tr>
+          </thead>
+          <tbody id="tally-body"></tbody>
+          <tfoot>
+            <tr id="tally-total"></tr>
+            <tr id="tally-rank"></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <form class="entry" id="entry" novalidate>
+        <p class="entry__title" id="entry-title">ADD A GAME'S POINTS</p>
+        <div class="entry__row">
+          <label class="entry__field entry__field--game">
+            <span class="entry__label">GAME</span>
+            <input class="field entry__input" id="entry-label" list="game-names" maxlength="40" placeholder="GAME NAME" autocomplete="off" spellcheck="false">
+            <datalist id="game-names">
+              <option value="PICTIONARY"></option>
+              <option value="FAMILY FEUD"></option>
+              <option value="RIYAL OR FAKEH"></option>
+            </datalist>
+          </label>
+          <div class="entry__points" id="entry-points"></div>
+        </div>
+        <p class="field-error" id="entry-error" role="alert"></p>
+        <div class="entry__actions">
+          <button class="btn btn--primary" type="submit" id="entry-save">&lt;ADD TO THE TALLY&gt;</button>
+          <button class="btn" type="button" id="entry-cancel" hidden>CANCEL</button>
+          <button class="btn" type="button" id="entry-fill" hidden>FILL FROM THE LAST PICTIONARY GAME</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Who was in which team -->
+    <section class="card sp-card" aria-labelledby="teams-title">
+      <div class="sp-card__head">
+        <h2 class="sp-card__title" id="teams-title">TEAMS</h2>
+        <span class="pill pill--sm pill--thin" id="teams-count">0 PLAYERS</span>
+      </div>
+      <div class="sp-teams" id="sp-teams"></div>
+    </section>
+
+    <!-- Every PICTIONARY game, saved by itself when it ends -->
+    <section class="card sp-card" aria-labelledby="games-title">
+      <div class="sp-card__head">
+        <h2 class="sp-card__title" id="games-title">PICTIONARY GAMES</h2>
+        <span class="sp-card__note">SAVED AUTOMATICALLY WHEN EACH GAME ENDS</span>
+      </div>
+      <ol class="sp-games" id="sp-games"></ol>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="modal__card" role="alertdialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-text">
+      <p class="modal__title" id="modal-title"></p>
+      <p class="modal__text" id="modal-text"></p>
+      <div class="modal__actions">
+        <button class="btn btn--red" type="button" id="modal-yes"></button>
+        <button class="btn" type="button" id="modal-no">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/pictionary/js/scores.js"></script>
+</body>
+</html>

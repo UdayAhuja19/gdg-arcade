@@ -2,3 +2,6 @@ node_modules/
 .env
 .DS_Store
 dist/
+.pictionary-teams.json*
+# The hello, world! scoreboard (teams and scores from the day)
+data/

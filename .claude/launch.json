@@ -65,6 +65,37 @@
         "preview"
       ],
       "port": 4173
+    },
+    {
+      "name": "pictionary-local",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "pictionary",
+        "--",
+        "--local"
+      ],
+      "port": 3201
+    },
+    {
+      "name": "pictionary-lan",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "pictionary",
+        "--",
+        "--lan"
+      ],
+      "port": 3201
+    },
+    {
+      "name": "pictionary-tunnel",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "pictionary"
+      ],
+      "port": 3201
     }
   ]
 }

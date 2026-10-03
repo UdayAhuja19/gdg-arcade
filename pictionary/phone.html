@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#ffffff">
+  <title>PICTIONARY · GDG on Campus UOBD</title>
+  <link rel="icon" href="/assets/logo-mark.svg">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/pictionary/css/pictionary.css">
+</head>
+<body class="phone">
+  <main class="phone__wrap">
+    <header class="phone__head">
+      <img class="phone__logo" src="/assets/logo-mark.svg" alt="GDG">
+      <span class="phone__conn" id="conn" hidden></span>
+    </header>
+
+    <!-- JOIN -->
+    <section id="view-join" class="pview" hidden>
+      <h1 class="phone__title bracketed">PICTIONARY</h1>
+      <p class="phone__lede">ONE TEAM DRAWS ON THE BIG SCREEN. EVERYONE ELSE GUESSES HERE.</p>
+      <form id="join-form" class="join-form" novalidate>
+        <label class="sr-only" for="name">YOUR NAME</label>
+        <input class="field" id="name" name="name" placeholder="YOUR NAME" maxlength="16" autocomplete="nickname" autocapitalize="characters" spellcheck="false" enterkeyhint="go" required>
+        <p class="field-error" id="name-error" role="alert"></p>
+        <button class="btn btn--primary btn--lg join-form__btn" type="submit" id="join-btn">&lt;JOIN&gt;</button>
+      </form>
+    </section>
+
+    <!-- IN THE GAME -->
+    <section id="view-play" class="pview" hidden>
+      <div class="you" id="you" hidden>
+        <span class="you__label">YOU'RE ON</span>
+        <span class="you__team" id="you-team">RED</span>
+        <span class="you__name" id="you-name"></span>
+      </div>
+
+      <!-- Waiting in the lobby -->
+      <div class="panel" id="panel-lobby" hidden>
+        <p class="panel__title">YOU'RE IN!</p>
+        <p class="panel__text">WAIT FOR THE HOST TO START. LOOK AT THE BIG SCREEN.</p>
+        <ol class="howto">
+          <li><b>1</b>EACH TURN, ONE TEAM DRAWS ON THE BIG SCREEN.</li>
+          <li><b>2</b>EVERYONE ELSE TYPES GUESSES HERE. FASTER = MORE POINTS.</li>
+          <li><b>3</b>LETTERS APPEAR AS HINTS. “CLOSE!” MEANS YOU'RE NEARLY THERE.</li>
+        </ol>
+      </div>
+
+      <!-- Someone is coming up / choosing a word -->
+      <div class="panel" id="panel-wait" hidden>
+        <p class="panel__kicker" id="wait-kicker"></p>
+        <p class="panel__title" id="wait-title"></p>
+        <p class="panel__text" id="wait-text"></p>
+      </div>
+
+      <!-- This phone draws -->
+      <div class="panel panel--draw" id="panel-drawer" hidden>
+        <p class="panel__kicker">YOU'RE DRAWING!</p>
+        <div id="drawer-pick">
+          <p class="panel__title">PICK A WORD</p>
+          <div class="choices" id="choices"></div>
+          <p class="panel__text"><span id="pick-left"></span></p>
+        </div>
+        <div id="drawer-word" hidden>
+          <p class="panel__text">YOUR WORD</p>
+          <p class="word" id="word"></p>
+          <p class="panel__text" id="drawer-text">GO TO THE LAPTOP AND DRAW IT. NO LETTERS, NO NUMBERS, NO TALKING.</p>
+        </div>
+      </div>
+
+      <!-- Guessing -->
+      <div class="panel panel--guess" id="panel-guess" hidden>
+        <div class="guess-head">
+          <div class="pattern-box">
+            <p class="pattern" id="pattern" aria-label="Word hint"></p>
+            <p class="pattern-count" id="pattern-count"></p>
+          </div>
+          <span class="clock" id="clock">80</span>
+        </div>
+        <p class="panel__text" id="guess-who"></p>
+        <form class="guess-form" id="guess-form" autocomplete="off" novalidate>
+          <label class="sr-only" for="guess">YOUR GUESS</label>
+          <input class="field guess-form__field" id="guess" maxlength="40" placeholder="GUESS…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send">
+          <button class="btn btn--primary guess-form__btn" type="submit" id="guess-btn">GUESS</button>
+        </form>
+        <p class="got-it" id="got-it" hidden></p>
+        <ol class="history" id="history"></ol>
+      </div>
+
+      <!-- The word, and the points -->
+      <div class="panel" id="panel-reveal" hidden>
+        <p class="panel__kicker" id="reveal-kicker"></p>
+        <p class="panel__text" id="reveal-label">THE WORD WAS</p>
+        <p class="word" id="reveal-word"></p>
+        <p class="panel__title" id="reveal-points"></p>
+      </div>
+
+      <!-- Results -->
+      <div class="panel" id="panel-results" hidden>
+        <p class="panel__kicker">GAME OVER</p>
+        <p class="panel__title" id="result-title"></p>
+        <ol class="mini-ranking" id="result-ranking"></ol>
+      </div>
+
+      <p class="mini-label" id="scores-label" hidden>TEAM SCORES</p>
+      <ol class="mini-scores" id="mini-scores" aria-label="Team scores"></ol>
+    </section>
+
+    <!-- MESSAGES -->
+    <section id="view-msg" class="pview" hidden>
+      <p class="phone__title" id="msg-title"></p>
+      <p class="phone__lede" id="msg-text"></p>
+      <button class="btn btn--primary btn--lg" type="button" id="msg-btn"></button>
+    </section>
+  </main>
+  <script type="module" src="/pictionary/js/phone.js"></script>
+</body>
+</html>
